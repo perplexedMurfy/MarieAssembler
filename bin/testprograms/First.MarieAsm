@@ -1,0 +1,49 @@
+/ forward 🀃 slash repersents a comment until the end of a line.
+jump J_Start
+
+/ jumpstore / This will throw a invalid keyword error
+jns 0x001
+jns Foo
+jns 0xfff  / This will throw a warning.
+/ jns 0xffff / This will throw a error, 4 bytes is too big for a constant.
+load 0x001
+load Foo
+store 0x001
+
+store Foo
+
+add 0x001
+
+add Foo
+    subt    0x001    .Ident   Loop
+    subt    Foo      .Ident    Loop1
+    input     .Ident    Loop2
+output
+halt
+skipcond greater / Is the same as skipcond C00
+skipcond lesser / Is the same as skipcond 000
+skipcond equal / Is the same as skipcond 400
+skipcond 0x400
+skipcond 0x001 / Produces a warning
+jump 0x001
+jump Foo
+clear
+addi 0x001
+addi Foo
+jumpi 0x001
+jumpi Foo
+loadi 0x001
+loadi Foo
+storei 0x001
+storei Foo
+
+.SetAddr 0x100 /.SetAddr sets what address we are inserting data into. Use when code or data needs to be in a particular spot. Code Collisions must be handled by the author.
+data 0d5 .Ident Foo 
+data 0x10 .Ident Bar /.Ident declares a symbol that may be used to talk about this particular section of memory. during assembly Idents are replaced with their respetive adderss.
+data 0d0 .Ident Baz
+
+.SetAddr 0x200
+load Foo .Ident J_Start
+add Bar
+output
+halt

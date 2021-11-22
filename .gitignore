@@ -1,0 +1,7 @@
+*.exe
+*.ilk
+*.pdb
+*.rdbg
+bin/TestPrograms/OUT_*
+bin/obj
+project.el
