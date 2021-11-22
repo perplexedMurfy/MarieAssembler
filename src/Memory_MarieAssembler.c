@@ -15,12 +15,12 @@ inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
 	Result->NextPage = 0;
 	Result->SizeOfElement = SizeOfElement;
 	Result->Length = Length;
-	Result->Memory = PushMemory(Arena, Length * SizeOfElement);
+	Result->Memory = calloc(Length, SizeOfElement);
 	
 	return Result;
 }
 
-inline void AddToPagedList(paged_list *List, void *Data, linear_arena *Arena) {
+inline void AddToPagedList(paged_list *List, void *Data) {
 	while (List->NextFreeIndex == List->Length) {
 		if (List->NextPage) {
 			List = List->NextPage;

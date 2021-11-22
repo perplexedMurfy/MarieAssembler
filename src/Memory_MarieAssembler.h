@@ -18,6 +18,6 @@ struct paged_list {
 	struct paged_list *NextPage;
 };
 
-paged_list* PushPagedList(linear_arena *Arena, uint32_t SizeOfElement, uint32_t Length);
-void AddToPagedList(paged_list *List, void *Data, linear_arena *Arena);
+paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length);
+void AddToPagedList(paged_list *List, void *Data);
 #endif
