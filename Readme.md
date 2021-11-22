@@ -2,12 +2,13 @@
 A assembler for the Marie computer
 
 ## Usage
-MarieAssembler.exe <In File> [Output Name]
+`MarieAssembler.exe <In File> [Output Name]`
 
 ## Operations
 For example programs, see ./bin/TestPrograms/
 
 | memonic | parameters | Explination |
+|-|-|-|
 | jns | Identifier or Hex literal |
 | load | Identifier or Hex literal |
 | store | Identifier or Hex literal |
