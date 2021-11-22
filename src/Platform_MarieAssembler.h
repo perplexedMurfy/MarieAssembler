@@ -13,12 +13,12 @@
 //-----
 //~ Functions defined in the platform layer
 
-/* Loads a file from a filesystem totally into memory
+/* Gets filesize
  * @Param FileName Name of file
  * @Param Success if this function was successful.
- * @Return a pointer pointing to the beginning of the textual content of the file. Make sure to skip past any header bytes, such as UFT-16's Endian Header. 
+ * @Return the size of the file.
  */
-wchar_t *Platform_LoadFileIntoMemory(wchar_t* FileName, int* Success);
+size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
 
 /* Auto generates the output file name based on the input file name.
  * This is platform spefic because different platforms have different file path conventions.
@@ -29,7 +29,7 @@ wchar_t *Platform_LoadFileIntoMemory(wchar_t* FileName, int* Success);
  *  Path = L"C:\Foo\Bar\Test.MarieAsm"
  *  Result = L"C:\Foo\Bar\OUT_Test"
  */
-wchar_t *Platform_CreateOutputFileName(wchar_t *Path, linear_arena *Arena, int *Success);
+wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success);
 
 //-----
 //~ Functions defined in the application layer

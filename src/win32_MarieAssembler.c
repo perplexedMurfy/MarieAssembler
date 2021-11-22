@@ -20,10 +20,6 @@
 
 #include "Platform_MarieAssembler.h"
 
-void *Platform_AllocateMemory(size_t Size) {
-	return VirtualAlloc(0, Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-}
-
 size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	LARGE_INTEGER Result = {0};
 	
@@ -39,7 +35,7 @@ size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	return (size_t)Result.QuadPart;
 }
 
-wchar_t *Platform_CreateOutputFileName(wchar_t *Path, linear_arena *Arena, int *Success) {
+wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success) {
 	wchar_t *Result = 0;
 
 	wchar_t *StartOfFileName = PathFindFileName(Path);
@@ -54,7 +50,7 @@ wchar_t *Platform_CreateOutputFileName(wchar_t *Path, linear_arena *Arena, int *
 	}
 
 	if (*Success) {
-		Result = PushArray(Arena, wchar_t, PathLength + OutputNameLength + wcslen(L"OUT_") + 1);
+		Result = calloc(PathLength + OutputNameLength + wcslen(L"OUT_") + 1, sizeof(wchar_t));
 		_snwprintf(Result, PathLength + OutputNameLength + wcslen(L"OUT_") + 1, L"%.*sOUT_%.*s", PathLength, Path, OutputNameLength, StartOfFileName);
 	}
 

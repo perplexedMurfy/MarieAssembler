@@ -7,6 +7,7 @@
 #define MARIEASSEMBLER_H
 
 #include <stdint.h>
+
 #ifdef TRUE
 #undef TRUE
 #endif
@@ -148,7 +149,7 @@ global_var const keyword_entry Keywords[] = {
 	},
 };
 
-// NOTE: keyword_index should be able to index correctly into Keywords table.
+// keyword_index should be able to index correctly into Keywords table.
 enum keyword_index {
 	KW_Jumpstore = 0,
 	KW_Load,
@@ -185,7 +186,6 @@ enum emit_code {
 	EMIT_Halt,
 };
 
-// @TODO move this into a parsing related file.
 typedef struct {
 	int Line, Column;
 	wchar_t *At;

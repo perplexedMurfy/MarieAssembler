@@ -23,6 +23,9 @@ global_var uint16_t Program[Kilobyte(4)] = {0};
 // Contains metadata regarding each Word of the program
 global_var uint8_t ProgramMetaData[Kilobyte(4)] = {0};
 
+/* Increases File->At pointer by Count characters.
+ * This function also keeps File->Column and File->Line.
+ */
 void IncFilePos(file_state *File, int Count) {
 	Assert(Count >= 0);
 	
@@ -39,6 +42,8 @@ void IncFilePos(file_state *File, int Count) {
 	}
 }
 
+/* Advances File->At past all whitespace and comments.
+ */
 void ConsumeWhitespaceAndComments(file_state *File) {
 	while (File->At[0] == L' '  ||
 	       File->At[0] == L'\n' ||
@@ -61,6 +66,8 @@ void ConsumeWhitespaceAndComments(file_state *File) {
 	}
 }
 
+/* Advances File->At past whitespace on the same line.
+ */
 void ConsumeWhitespaceNoNewLine(file_state *File) {
 	while (File->At[0] == L' '  ||
 	       File->At[0] == L'\r' ||
@@ -69,6 +76,9 @@ void ConsumeWhitespaceNoNewLine(file_state *File) {
 	}
 }
 
+/* if File->At does not point to the beginning of a number of the form `0d0000`, then this function returns false and Result is set to 0.
+ * if File->At does point to the beginning of a number, then this function returns true and Result will have the value of that number.
+ */
 int EatNumberDecimal(file_state *File, int *Result) {
 	int Success = FALSE;
 	int sign = 1;
@@ -106,6 +116,10 @@ int EatNumberDecimal(file_state *File, int *Result) {
 	return Success;
 }
 
+
+/* if File->At does not point to the beginning of a number of the form `0x0000`, then this function returns false and Result is set to 0.
+ * if File->At does point to the beginning of a number, then this function returns true and Result will have the value of that number.
+ */
 int EatNumberHexadecimal(file_state *File, int *Result) {
 	int Success = FALSE;
 	int sign = 1;
@@ -145,6 +159,9 @@ int EatNumberHexadecimal(file_state *File, int *Result) {
 	return Success;
 }
 
+/* If File->At points to a charcter that can be the beginning of a identifier, then this function returns True, File->At is advnaced past the identifier, and the length of the identifier is returned though Length. 
+ * If File->At does not point to a character that can begin an identifier, then 
+ */
 int EatIdentifier(file_state *File, int *Length) {
 	int Success = FALSE;
 	if (!(File->At[0] >= L'0' && File->At[0] <= L'9')) {
@@ -163,6 +180,9 @@ int EatIdentifier(file_state *File, int *Length) {
 	return Success;
 }
 
+/* If File->At points to the beginning of a keyword, then this function returns true, the length of the keyword is returned though Length.
+ * else, this function returns false, and Length will be set to 0.
+ */
 int PeekKeyword(file_state *File, int *Length) {
 	int Success = FALSE;
 	*Length = 0;
@@ -200,6 +220,8 @@ inline int CompareStrToKeyword(wchar_t *Str, int FileKeywordLength, const keywor
 	}
 }
 
+/* If ConditionOfFailure is true, then DidErrorOccur is set to true, and vwprintf_s is called with the format string and the VarArg list passed to this function.
+ */
 void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const wchar_t *FormatString, ...) {
 	if (ConditionOfFailure) {
 		if (DidErrorOccur) {
@@ -221,7 +243,7 @@ inline int WriteProgramData(file_state *File, uint16_t Data, int CurrentAddress,
 	return Success;
 }
 
-int Assemble(linear_arena *Arena, file_state *File, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
+int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
 	int DidErrorOccur = FALSE;
 	int ToIncrementAddress = FALSE;
 	int LastLineOperationWasProcessed = -1;
@@ -267,7 +289,7 @@ int Assemble(linear_arena *Arena, file_state *File, paged_list *IdentifierDestin
 			ToIncrementAddress = TRUE;
 			LastLineOperationWasProcessed = File->Line;
 
-			// @TODO Allow 0d numbers
+			// @TODO Allow 0d numbers as addresses
 			int Address = 0;
 			identifier_dest IdentifierDest = {.Start = File->At, .Address = CurrentAddress, .Line = File->Line, .Column = File->Column};
 			if (EatNumberHexadecimal(File, &Address)) {
@@ -275,7 +297,7 @@ int Assemble(linear_arena *Arena, file_state *File, paged_list *IdentifierDestin
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode | Address, CurrentAddress, PMD_IsOccupied);
 			}
 			else if (EatIdentifier(File, &IdentifierDest.Length)) {
-				AddToPagedList(IdentifierDestinationList, &IdentifierDest, Arena);
+				AddToPagedList(IdentifierDestinationList, &IdentifierDest);
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode, CurrentAddress, PMD_IsOccupied | PMD_UsedIdentifier);
 			}
 			else {
@@ -367,7 +389,7 @@ int Assemble(linear_arena *Arena, file_state *File, paged_list *IdentifierDestin
 			ProgramMetaData[CurrentAddress - 1] |= PMD_DefinedIdentifier;
 			// .Value is CurrentAddress - 1 because that was the address of the last instruction that was processed. Thanks to the following checks, we can be sure that we're refering to the instruction that was immeatly preceeded this .Ident.
 			
-			AddToPagedList(IdentifierSourceList, &Data, Arena);
+			AddToPagedList(IdentifierSourceList, &Data);
 		} break;
 
 		case(KW_Data): {
@@ -515,12 +537,12 @@ void OutputSymbolTable(wchar_t *FileName, paged_list *IdentifierDestinationList,
 	fclose(FileStream);
 }
 
-void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList, linear_arena *Arena) {
+void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
 	FILE *FileStream = _wfopen(FileName, L"w,ccs=UNICODE");
 	int InMemoryGap = FALSE;
 
-	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string. Also error checking
-	wchar_t *ContentsOfAC = PushArray(Arena, wchar_t, 5000);
+	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string.
+	wchar_t *ContentsOfAC = calloc(5000, sizeof(wchar_t));
 	int ContentsOfACSize = 5000;
 	ContentsOfAC[0] = L'0';
 	ContentsOfAC[1] = L'\0';
@@ -1004,8 +1026,6 @@ int ApplicationMain(int ArgCount, wchar_t **Args) {
 
 	int Success = TRUE;
 
-	linear_arena Arena = InitArena(Kilobyte(32)); // @TODO linear_arena should have the ability to grow in size if need be.
-
 	file_state FileState = {
 		.Line = 1,
 		.Column = 0,
@@ -1013,15 +1033,15 @@ int ApplicationMain(int ArgCount, wchar_t **Args) {
 	FileState.At = LoadFileIntoMemory(Args[1], &Success);
 	if (Success == FALSE) { return 0; }
 
-	paged_list *IdentifierDestinationList = PushPagedList(&Arena, sizeof(identifier_dest), 10);
-	paged_list *IdentifierSourceList = PushPagedList(&Arena, sizeof(identifier_source), 10);
+	paged_list *IdentifierDestinationList = AllocatePagedList(sizeof(identifier_dest), 10);
+	paged_list *IdentifierSourceList = AllocatePagedList(sizeof(identifier_source), 10);
 	
-	if (Assemble(&Arena, &FileState, IdentifierDestinationList, IdentifierSourceList)) {
+	if (Assemble(&FileState, IdentifierDestinationList, IdentifierSourceList)) {
 		wchar_t *OutputFileName;
 		int OutputNameLength;
 
 		if (ArgCount == 2) {
-			OutputFileName = Platform_CreateOutputFileName(Args[1], &Arena, &Success);
+			OutputFileName = Platform_CreateOutputFileName(Args[1], &Success);
 		}
 		else {
 			OutputFileName = Args[2];
@@ -1031,10 +1051,10 @@ int ApplicationMain(int ArgCount, wchar_t **Args) {
 	
 		int Size = OutputNameLength;
 		
-		wchar_t *OutputLogisimImageName = PushArray(&Arena, wchar_t, Size + 13);
-		wchar_t *OutputRawHexName = PushArray(&Arena, wchar_t, Size + 4);
-		wchar_t *OutputSymbolTableName = PushArray(&Arena, wchar_t, Size + 4);
-		wchar_t *OutputListingName = PushArray(&Arena, wchar_t, Size + 4);
+		wchar_t *OutputLogisimImageName = calloc(sizeof(wchar_t), Size + 13);
+		wchar_t *OutputRawHexName = calloc(sizeof(wchar_t), Size + 4);
+		wchar_t *OutputSymbolTableName = calloc(sizeof(wchar_t), Size + 4);
+		wchar_t *OutputListingName = calloc(sizeof(wchar_t), Size + 4);
 
 		_snwprintf(OutputLogisimImageName, Size + 13, L"%.*s.LogisimImage", OutputNameLength + 4, OutputFileName);
 		_snwprintf(OutputRawHexName, Size + 4, L"%.*s.hex", OutputNameLength + 4, OutputFileName);	
@@ -1044,7 +1064,7 @@ int ApplicationMain(int ArgCount, wchar_t **Args) {
 		OutputRawHex(OutputRawHexName);
 		OutputLogisimImage(OutputLogisimImageName);
 		OutputSymbolTable(OutputSymbolTableName, IdentifierDestinationList, IdentifierSourceList);
-		OutputListing(OutputListingName, IdentifierDestinationList, IdentifierSourceList, &Arena);
+		OutputListing(OutputListingName, IdentifierDestinationList, IdentifierSourceList);
 	}
 
 	// @TODO output a value that repersents our success.
