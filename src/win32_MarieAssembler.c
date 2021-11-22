@@ -39,67 +39,6 @@ size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	return (size_t)Result.QuadPart;
 }
 
-// @TODO: This function only loads utf-16 little endian files.
-wchar_t* Platform_LoadFileIntoMemory(wchar_t *FileName, int *Success) {	
-	wchar_t *Result = 0;
-
-	HANDLE FileHandle = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	
-	LARGE_INTEGER FileSize;
-	if (GetFileSizeEx(FileHandle, &FileSize) == 0) {
-		DWORD Error = GetLastError();
-		wprintf(L"[Error File Handling] This program could not get the size of the provided file (%s).\nThe value of win32's GetLastError is '%d'", FileName, Error);
-		*Success = FALSE;
-	}
-	else { SetLastError(0); }
-
-	Result = malloc(FileSize.QuadPart + sizeof(wchar_t));
-	Result[FileSize.QuadPart/sizeof(wchar_t)] = L'\0';
-
-	DWORD BytesRead = 0;
-
-	uint8_t ByteOrderMark[4];
-	ReadFile(FileHandle, &ByteOrderMark, 4, &BytesRead, 0);
-	if ((ByteOrderMark[0] == 0xFF) &&
-	    (ByteOrderMark[1] == 0xFE) &&
-	    (ByteOrderMark[2] == 0x00) &&
-	    (ByteOrderMark[3] == 0x00)) { // UTF-32-LE
-	}
-	else if ((ByteOrderMark[0] == 0x00) &&
-	         (ByteOrderMark[1] == 0x00) &&
-	         (ByteOrderMark[2] == 0xFE) &&
-	         (ByteOrderMark[3] == 0xFF)) { // UTF-32-BE
-	}
-	else if ((ByteOrderMark[0] == 0xFF) &&
-	         (ByteOrderMark[1] == 0xFE)) { // UTF-16-LE
-	}
-	else if ((ByteOrderMark[0] == 0xFE) &&
-	         (ByteOrderMark[1] == 0xFF)) { // UTF-16-BE
-	}
-	else if ((ByteOrderMark[0] == 0xEF) &&
-	         (ByteOrderMark[1] == 0xBB) &&
-	         (ByteOrderMark[2] == 0xBF)) { // UTF-8
-	}
-	else { // Assuming Ascii
-	}
-	
-	if (ReadFile(FileHandle, Result, FileSize.QuadPart, &BytesRead, 0) == FALSE) {
-		DWORD Error = GetLastError();
-		wprintf(L"[Error File Handling] This program could not read the contents of the provided file (%s).\nThe value of win32's GetLastError is '%d'", FileName, Error);
-		*Success = FALSE;
-	};
-
-	CloseHandle(FileHandle);
-
-	if (Result[0] != 0xfeff) {
-		wprintf(L"[Error File Handling] This program only supports UTF-16 in Little Endian. Please change you source file's encoding to UTF-16 Little Endian, or program in support for other character formats.");
-		*Success = FALSE;
-	}
-	Result += 1;
-
-	return Result;
-}
-
 wchar_t *Platform_CreateOutputFileName(wchar_t *Path, linear_arena *Arena, int *Success) {
 	wchar_t *Result = 0;
 

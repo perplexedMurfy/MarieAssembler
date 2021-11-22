@@ -51,7 +51,9 @@ void ConsumeWhitespaceAndComments(file_state *File) {
 			       File->At[0] != L'\0') {
 				IncFilePos(File, 1);
 			}
-			IncFilePos(File, 1);
+			if (File->At[0] == L'\n') {
+				IncFilePos(File, 1);
+			}
 		}
 		else {
 			IncFilePos(File, 1);
@@ -857,7 +859,8 @@ wchar_t *LoadFileIntoMemory(wchar_t *FileName, int *Success) {
 		    (ByteOrderMark[1] == 0xFE) &&
 		    (ByteOrderMark[2] == 0x00) &&
 		    (ByteOrderMark[3] == 0x00)) { // UTF-32-LE
-			Assert(FALSE);
+			wprintf(L"[Error File Handling] Little Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
+			*Success = FALSE;       
 		}
 		
 		else if ((FileSize >= 4) &&
@@ -865,7 +868,8 @@ wchar_t *LoadFileIntoMemory(wchar_t *FileName, int *Success) {
 		         (ByteOrderMark[1] == 0x00) &&
 		         (ByteOrderMark[2] == 0xFE) &&
 		         (ByteOrderMark[3] == 0xFF)) { // UTF-32-BE
-			Assert(FALSE);
+			wprintf(L"[Error File Handling] Big Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
+			*Success = FALSE;
 		}
 		
 		else if ((FileSize >= 2) &&
