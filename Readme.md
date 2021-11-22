@@ -7,8 +7,8 @@ A assembler for the Marie computer
 ## Operations
 For example programs, see ./bin/TestPrograms/
 
-| memonic | parameters | Explination |
-|-|-|-|
+| memonic | parameters |
+|-|-|
 | jns | Identifier or Hex literal |
 | load | Identifier or Hex literal |
 | store | Identifier or Hex literal |
