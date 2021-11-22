@@ -1,6 +1,9 @@
 # Marie Assembler
 A assembler for the Marie computer
 
+## Building
+run build.bat with a visual studio command prompt.
+
 ## Usage
 `MarieAssembler.exe <In File> [Output Name]`
 
