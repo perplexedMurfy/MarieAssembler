@@ -35,6 +35,10 @@ size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	return (size_t)Result.QuadPart;
 }
 
+FILE *Platform_WideFOpen(wchar_t *Path, wchar_t *Mode) {
+	return _wfopen(Path, Mode);
+}
+
 wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success) {
 	wchar_t *Result = 0;
 

@@ -229,7 +229,7 @@ void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const 
 		}
 		va_list VarArgsList;
 		va_start(VarArgsList,FormatString);
-		vwprintf_s(FormatString, VarArgsList);
+		vwprintf(FormatString, VarArgsList);
 		va_end(VarArgsList);
 	}
 }
@@ -465,7 +465,7 @@ int IndexOfFromEnd(wchar_t *String, wchar_t Target) {
 }
 
 void OutputLogisimImage(wchar_t *FileName) {
-	FILE *FileStream = _wfopen(FileName, L"w");
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w");
 	if (!FileStream) {
 		wprintf(L"[Error Output] Could not open file \"%s\" for output.\n", FileName);
 	}
@@ -495,7 +495,7 @@ void OutputLogisimImage(wchar_t *FileName) {
 }
 
 void OutputRawHex(wchar_t *FileName) {
-	FILE *FileStream = _wfopen(FileName, L"w");
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w");
 
 	fwrite(Program, sizeof(Program), 1, FileStream);
 	
@@ -503,7 +503,7 @@ void OutputRawHex(wchar_t *FileName) {
 }
 
 void OutputSymbolTable(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	FILE *FileStream = _wfopen(FileName, L"w,ccs=UNICODE");
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
 
 	int IdentifierMaxLength = 0;
 	for (int Index = 0; ; Index++) {
@@ -538,7 +538,7 @@ void OutputSymbolTable(wchar_t *FileName, paged_list *IdentifierDestinationList,
 }
 
 void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	FILE *FileStream = _wfopen(FileName, L"w,ccs=UNICODE");
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
 	int InMemoryGap = FALSE;
 
 	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string.
@@ -865,13 +865,12 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 	fclose(FileStream);
 }
 
-
 wchar_t *LoadFileIntoMemory(wchar_t *FileName, int *Success) {
 	wchar_t *Result = 0;
 	size_t FileSize = Platform_GetFileSize(FileName, Success);
 
 	if (*Success) {
-		FILE *FileStream = _wfopen(FileName, L"rb");	
+		FILE *FileStream = Platform_WideFOpen(FileName, L"rb");	
 		uint8_t ByteOrderMark[4];
 		fread(&ByteOrderMark, sizeof(uint8_t), Min(4, FileSize), FileStream);
 		fseek(FileStream, 0, SEEK_SET);

@@ -10,6 +10,8 @@
 #include "MarieAssembler.h"
 #include "Memory_MarieAssembler.h"
 
+#include <stdio.h>
+
 //-----
 //~ Functions defined in the platform layer
 
@@ -30,6 +32,8 @@ size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
  *  Result = L"C:\Foo\Bar\OUT_Test"
  */
 wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success);
+
+FILE *Platform_WideFOpen(wchar_t *Path, wchar_t *Mode);
 
 //-----
 //~ Functions defined in the application layer
