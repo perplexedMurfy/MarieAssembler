@@ -1,0 +1,7 @@
+/ in this program's high level output, both lines from the jns instruction should be indented. Not just the first one!
+skipcond equal .Ident Loop
+jns Loop
+data 0x000
+skipcond equal
+jns 0x4
+halt

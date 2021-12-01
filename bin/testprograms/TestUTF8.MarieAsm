@@ -1,0 +1,14 @@
+/ This is a file is encoded in UTF-8.
+/ Ensure that the output of the multibyte identifiers are correct!
+data 0x000 .Ident Single_aaa_Byte
+data 0x001 .Ident Double_a£a_Byte
+data 0x002 .Ident Triple_aᚬa_Byte
+data 0x003 .Ident Quad_a🀄a_Byte
+
+.SetAddr 0x10
+
+/ Ensure that the assembler is actually emitting the correct values with multibyte identifiers!
+load Single_aaa_Byte
+load Double_a£a_Byte
+load Triple_aᚬa_Byte
+load Quad_a🀄a_Byte
