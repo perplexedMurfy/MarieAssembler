@@ -606,10 +606,10 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					OpcodeMemonic = Keywords[KW_Load].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"0x%0.3X", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Store].Opcode) {
@@ -621,18 +621,18 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"0x%0.3X", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + 0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -641,18 +641,18 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-*0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-0x%0.3X", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - *0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - 0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -691,18 +691,18 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"**%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"**0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + **%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + **0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -710,10 +710,10 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					OpcodeMemonic = Keywords[KW_Loadi].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"**%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"**0x%0.3X", Program[Index] & 0x0FFF);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Storei].Opcode) {
@@ -756,7 +756,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					}
 					if (IdentifierSource->Value == Index) {
 						ListingCharacterCount += fwprintf(FileStream, L" .Ident %.*s", IdentifierSource->Length, IdentifierSource->Start);
-						break;   
+						break;
 					}
 				}
 			}
@@ -774,42 +774,42 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 					
 				case(EMIT_Jump): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"PC <- %.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintf(FileStream, L"Goto %.*s // 0x%0.3X", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintf(FileStream, L"PC <- 0x%0.3X", Program[Index] & 0x0FFF);
+						fwprintf(FileStream, L"Goto 0x%0.3X", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpi): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"PC <- *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintf(FileStream, L"Goto *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"PC <- *0x%0.4X", Program[Index] & 0x0FFF);
+						fwprintf(FileStream, L"Goto *0x%0.3X", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpstore): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"*%.*s <- PC\n", IdentifierDestination->Length, IdentifierDestination->Start);
-						fwprintf(FileStream, L"|         |        | %- *s | PC <- *(%.*s + 0x1)", ListingMaxLength, L"", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintf(FileStream, L"%.*s = PC\n", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintf(FileStream, L"|         |        | %- *s | % *sGoto (%.*s + 0x1) // (0x%0.3X + 0x1)", ListingMaxLength, L"", EmitIndentNextLine ? 0 : 4, L"", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintf(FileStream, L"*0x%0.3X <- PC\n", Program [Index] & 0x0FFF);
-						fwprintf(FileStream, L"|         |        | %- *s | PC <- *(0x%0.4X + 0x1)", ListingMaxLength, L"", Program[Index] & 0x0FFF);
+						fwprintf(FileStream, L"0x%0.3X = PC\n", Program [Index] & 0x0FFF);
+						fwprintf(FileStream, L"|         |        | %- *s | Goto (0x%0.3X + 0x1)", ListingMaxLength, L"", Program[Index] & 0x0FFF);
 					}
 				} break;
 
 				case(EMIT_Skipcond): {
 					if ((Program[Index] & 0x0FFF) == 0xC00) { // Greater
-						fwprintf(FileStream, L"if (%s) <= 0", ContentsOfAC);
+						fwprintf(FileStream, L"if ((%s) <= 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x400) { // Equal
-						fwprintf(FileStream, L"if (%s) != 0", ContentsOfAC);
+						fwprintf(FileStream, L"if ((%s) != 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x000) { // Lesser
-						fwprintf(FileStream, L"if (%s) >= 0", ContentsOfAC);
+						fwprintf(FileStream, L"if ((%s) >= 0)", ContentsOfAC);
 					}
 					else { // Unknown
 						fwprintf(FileStream, L"Skip next if (unknown operation)");
@@ -819,28 +819,33 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 
 				case(EMIT_Store): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"*%.*s <- %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						fwprintf(FileStream, L"%.*s = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"*0x%0.3x <- %s", Program[Index] & 0x0FFF, ContentsOfAC);
+						fwprintf(FileStream, L"RAM[0x%0.3x] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3x]", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Storei): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"**%.*s <- %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						fwprintf(FileStream, L"RAM[%.*s] = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"**0x%0.3x <- %s", Program[Index] & 0x0FFF, ContentsOfAC);
+						fwprintf(FileStream, L"RAM[RAM[0x%3.X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%3.X]]", Program[Index] & 0xFFF);
 					}
+					
 				} break;
 
 				case(EMIT_Clear): {
-					fwprintf(FileStream, L"AC <- 0");
+					fwprintf(FileStream, L"AC = 0");
 				} break;
 
 				case(EMIT_Output): {
-					fwprintf(FileStream, L"Output <- %s", ContentsOfAC);
+					fwprintf(FileStream, L"Output = %s", ContentsOfAC);
 				} break;
 
 				case(EMIT_Halt): {
@@ -853,7 +858,6 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 				}
 				EmitCode = EMIT_No;	
 			}
-			
 			
 			fwprintf(FileStream, L"\n");
 		}
