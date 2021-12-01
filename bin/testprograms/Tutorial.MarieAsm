@@ -1,0 +1,43 @@
+/ Comments start with a '/' charcter and last to the end of the line
+data 0x1000 / raw values can be inserted into a program with the `data` keyword
+data 0d1000 / use '0x' to denote hexadecimal. use '0d' to denote decimal
+
+data 0d020 .Ident Twenty / You can declare a identifier by using the '.Ident' Directive. 
+load Twenty / This is how one would use a Identifier. This instruction loads the data located on the same line as the Identifier.
+load 0x2 / This instruction is the same as the previous one. In this program, Identifier Twenty is equivalent to the address 0x2.
+
+data 0x0000 .Ident Foo
+
+.SetAddr 0x100 / The `.SetAddr` directive sets the address at which instructions are being emitted.
+data 0x000 .Ident Bar / This instruction will be placed at address 0x100 in the assembled ROM.
+
+/ All valid forms of all instructions follow:
+jns 0x000 / JumpStore with a argument of 0
+jns Bar / JumpStore with a argument of 0x100
+load 0x000
+load Bar
+store 0x000
+store Bar
+add 0x000
+add Bar
+subt 0x000
+subt Bar
+input / No Argument
+output / No Argument
+skipcond greater / tests for AC > 0
+skipcond equal / tests for AC == 0
+skipcond lesser / tests for AC < 0
+skipcond 0x000 / you may also give the raw argument for skipcond, there's no real reason too though...
+jump 0x000 / Jumps to Address 0x0
+jump Bar / Jumps to the instruction at Identifier Bar
+clear /No Argument
+addi 0x000
+addi Bar
+jumpi 0x000
+jumpi Bar
+loadi 0x000
+loadi Bar
+storei 0x000
+storei Bar
+data 0x020 / Data with a hex literal
+data 0d020 / Data with a dec literal
