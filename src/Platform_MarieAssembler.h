@@ -7,10 +7,50 @@
 #ifndef PLATFORM_MARIEASSEMBLER_H
 #define PLATFORM_MARIEASSEMBLER_H
 
-#include "MarieAssembler.h"
-#include "Memory_MarieAssembler.h"
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#define TRUE (1)
+
+#ifdef FALSE
+#undef FALSE
+#endif
+
+#define FALSE (0)
+
+#ifdef Assert
+#undef Assert
+#endif
+
+#ifdef Min
+#undef Min
+#endif
+
+#define Min(A, B) ((A) < (B) ? (A) : (B))
+
+#ifdef Max
+#undef Max
+#endif
+
+#undef Assert
+
+#if DEBUG
+# define Assert(Cnd) if ((Cnd) != TRUE) { Platform_Breakpoint(); }
+#else
+# define Assert(Cnd)
+#endif
+
+#define Max(A, B) ((A) > (B) ? (A) : (B))
+
+#define Kilobyte(A) ((A) * 1024)
+#define Megabyte(A) ((Kilobyte(A) * 1024)
+
+#define global_var static
+#define local_persist static
 
 #include <stdio.h>
+#include "MarieAssembler.h"
 
 //-----
 //~ Functions defined in the platform layer

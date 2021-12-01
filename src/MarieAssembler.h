@@ -7,46 +7,7 @@
 #define MARIEASSEMBLER_H
 
 #include <stdint.h>
-
-#ifdef TRUE
-#undef TRUE
-#endif
-
-#define TRUE (1)
-
-#ifdef FALSE
-#undef FALSE
-#endif
-
-#define FALSE (0)
-
-#ifdef Assert
-#undef Assert
-#endif
-
-#ifdef DEBUG
-#define Assert(Cnd) if ((Cnd) != TRUE) { __debugbreak(); }
-#else
-#define Assert(Cnd)
-#endif
-
-#ifdef Min
-#undef Min
-#endif
-
-#define Min(A, B) ((A) < (B) ? (A) : (B))
-
-#ifdef Max
-#undef Max
-#endif
-
-#define Max(A, B) ((A) > (B) ? (A) : (B))
-
-#define Kilobyte(A) ((A) * 1024)
-#define Megabyte(A) ((Kilobyte(A) * 1024)
-
-#define global_var static
-#define local_persist static
+#include "Platform_MarieAssembler.h"
 
 #define NO_OPCODE (0xFFFF0000)
 
