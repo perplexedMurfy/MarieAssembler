@@ -834,8 +834,8 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"RAM[RAM[0x%3.X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%3.X]]", Program[Index] & 0xFFF);
+						fwprintf(FileStream, L"RAM[RAM[0x%0.3X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0xFFF);
 					}
 					
 				} break;
