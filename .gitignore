@@ -2,6 +2,12 @@
 *.ilk
 *.pdb
 *.rdbg
-bin/TestPrograms/OUT_*
+
+*.hex
+*.LogisimImage
+*.lst
+*.sym
+
 bin/obj
 project.el
+
