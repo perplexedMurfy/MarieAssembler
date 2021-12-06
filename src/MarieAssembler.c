@@ -26,7 +26,7 @@ global_var uint8_t ProgramMetaData[Kilobyte(4)] = {0};
 /* Increases File->At pointer by Count characters.
  * This function also keeps File->Column and File->Line.
  */
-void IncFilePos(file_state *File, int Count) {
+void IncrementFilePosition(file_state *File, int Count) {
 	Assert(Count >= 0);
 	
 	for (; Count != 0; Count--) {
@@ -44,7 +44,7 @@ void IncFilePos(file_state *File, int Count) {
 
 /* Advances File->At past all whitespace and comments.
  */
-void ConsumeWhitespaceAndComments(file_state *File) {
+void AdvancePastWhitespaceAndComments(file_state *File) {
 	while (File->At[0] == L' '  ||
 	       File->At[0] == L'\n' ||
 	       File->At[0] == L'\r' ||
@@ -54,25 +54,25 @@ void ConsumeWhitespaceAndComments(file_state *File) {
 		if (File->At[0] == L'/') {
 			while (File->At[0] != L'\n' &&
 			       File->At[0] != L'\0') {
-				IncFilePos(File, 1);
+				IncrementFilePosition(File, 1);
 			}
 			if (File->At[0] == L'\n') {
-				IncFilePos(File, 1);
+				IncrementFilePosition(File, 1);
 			}
 		}
 		else {
-			IncFilePos(File, 1);
+			IncrementFilePosition(File, 1);
 		}
 	}
 }
 
 /* Advances File->At past whitespace on the same line.
  */
-void ConsumeWhitespaceNoNewLine(file_state *File) {
+void AdvancePastWhitespaceOnSameLine(file_state *File) {
 	while (File->At[0] == L' '  ||
 	       File->At[0] == L'\r' ||
 	       File->At[0] == L'\t') {
-		IncFilePos(File, 1);
+		IncrementFilePosition(File, 1);
 	}
 }
 
@@ -85,7 +85,7 @@ int EatNumberDecimal(file_state *File, int *Result) {
 	*Result = 0;
 
 	if (File->At[0] == L'0' && File->At[1] == L'd') {
-		IncFilePos(File, 2);
+		IncrementFilePosition(File, 2);
 		// @TODO this loop could be writen better...
 		while ((*(File->At) >= L'0' && *(File->At) <= L'9') ||
 		       (*(File->At) == '-') ||
@@ -108,7 +108,7 @@ int EatNumberDecimal(file_state *File, int *Result) {
 				*Result += *(File->At) - L'0';
 			}
 		
-			IncFilePos(File, 1);
+			IncrementFilePosition(File, 1);
 		}
 	}
 
@@ -126,7 +126,7 @@ int EatNumberHexadecimal(file_state *File, int *Result) {
 	*Result = 0;
 
 	if (File->At[0] == L'0' && File->At[1] == L'x') {
-		IncFilePos(File, 2);
+		IncrementFilePosition(File, 2);
 		// @TODO this loop could be writen better...
 		while ((File->At[0] >= L'0' && File->At[0] <= L'9') ||
 		       (File->At[0] >= L'A' && File->At[0] <= L'F') ||
@@ -152,7 +152,7 @@ int EatNumberHexadecimal(file_state *File, int *Result) {
 
 			*Result += Value;
 		
-			IncFilePos(File, 1);
+			IncrementFilePosition(File, 1);
 		}
 	}
 	
@@ -167,14 +167,14 @@ int EatIdentifier(file_state *File, int *Length) {
 	if (!(File->At[0] >= L'0' && File->At[0] <= L'9')) {
 		Success = TRUE;
 		(*Length)++;
-		IncFilePos(File, 1);
+		IncrementFilePosition(File, 1);
 		while ((File->At[0] != L' ') &&
 		       (File->At[0] != L'\n') &&
 		       (File->At[0] != L'\r') &&
 		       (File->At[0] != L'\t') &&
 		       (File->At[0] != L'\0')) {
 			(*Length)++;
-			IncFilePos(File, 1);
+			IncrementFilePosition(File, 1);
 		}
 	}
 	return Success;
@@ -251,7 +251,7 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 	int CurrentAddress = 0;
 	
 	while(!DidErrorOccur) {
-		ConsumeWhitespaceAndComments(File);
+		AdvancePastWhitespaceAndComments(File);
 		if (ToIncrementAddress == TRUE) {
 			CurrentAddress++;
 			ToIncrementAddress = FALSE;
@@ -284,8 +284,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_Sub): {
 			// KEYWORD [Addr|Identifier]
 			
-			IncFilePos(File, Keywords[KeywordIndex].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KeywordIndex].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			ToIncrementAddress = TRUE;
 			LastLineOperationWasProcessed = File->Line;
 
@@ -315,8 +315,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_Clear): {
 			// KEYWORD
 
-			IncFilePos(File, Keywords[KeywordIndex].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KeywordIndex].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			ToIncrementAddress = TRUE;
 			LastLineOperationWasProcessed = File->Line;
 
@@ -326,22 +326,22 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_Skipcond): {
 			// Skipcond [lesser|greater|equal|NUMBER]
 
-			IncFilePos(File, Keywords[KW_Skipcond].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KW_Skipcond].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			ToIncrementAddress = TRUE;
 			LastLineOperationWasProcessed = File->Line;
 			
 			int RawOperation = 0;
 			if (CompareStr(File->At, L"lesser", 6)) {
-				IncFilePos(File, 6);
+				IncrementFilePosition(File, 6);
 				RawOperation = 0x000;
 			}
 			else if (CompareStr(File->At, L"equal", 5)) {
-				IncFilePos(File, 5);
+				IncrementFilePosition(File, 5);
 				RawOperation = 0x400;
 			}
 			else if (CompareStr(File->At, L"greater", 7)) {
-				IncFilePos(File, 7);
+				IncrementFilePosition(File, 7);
 				RawOperation = 0xC00;
 			}
 			else if (EatNumberHexadecimal(File, &RawOperation)) {
@@ -357,8 +357,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_M_SetAddr): {
 			// .SetAddr [Addr]
 
-			IncFilePos(File, Keywords[KW_M_SetAddr].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KW_M_SetAddr].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			
 			ReportErrorConditionally(EatNumberHexadecimal(File, &CurrentAddress) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Unable to Eat a Hexadecimal Number for .SetAddr", File->Line, File->Column);
 
@@ -368,8 +368,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_M_Ident): {
 			// .Ident [Identifier]
 
-			IncFilePos(File, Keywords[KW_M_Ident].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KW_M_Ident].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			
 			identifier_source Data = {.Start = File->At, .Value = CurrentAddress - 1, .Line = File->Line, .Column = File->Column};
 
@@ -395,8 +395,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 		case(KW_Data): {
 			// Data [NUMBER]
 
-			IncFilePos(File, Keywords[KW_Data].Length);
-			ConsumeWhitespaceNoNewLine(File);
+			IncrementFilePosition(File, Keywords[KW_Data].Length);
+			AdvancePastWhitespaceOnSameLine(File);
 			ToIncrementAddress = TRUE;
 			LastLineOperationWasProcessed = File->Line;
 			int Value = 0;
