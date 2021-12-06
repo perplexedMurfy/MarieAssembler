@@ -609,7 +609,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 						_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"0x%0.3X", Program[Index] & 0x0FFF);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]/", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Store].Opcode) {
@@ -624,7 +624,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
@@ -632,7 +632,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + 0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -644,7 +644,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
@@ -652,7 +652,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - 0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -694,7 +694,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
@@ -702,7 +702,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *0x%0.3X", ContentsOfAC, Program[Index] & 0x0FFF);
+							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -713,7 +713,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*0x%0.3X", Program[Index] & 0x0FFF);
+						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Storei].Opcode) {
@@ -786,7 +786,7 @@ void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, pag
 						fwprintf(FileStream, L"Goto *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"Goto *0x%0.3X", Program[Index] & 0xFFF);
+						fwprintf(FileStream, L"Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
 					}
 				} break;
 
