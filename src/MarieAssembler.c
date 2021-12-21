@@ -79,7 +79,7 @@ void AdvancePastWhitespaceOnSameLine(file_state *File) {
 /* if File->At does not point to the beginning of a number of the form `0d0000`, then this function returns false and Result is set to 0.
  * if File->At does point to the beginning of a number, then this function returns true and Result will have the value of that number.
  */
-int EatNumberDecimal(file_state *File, int *Result) {
+int ExtractNumberDecimal(file_state *File, int *Result) {
 	int Success = FALSE;
 	int sign = 1;
 	*Result = 0;
@@ -120,7 +120,7 @@ int EatNumberDecimal(file_state *File, int *Result) {
 /* if File->At does not point to the beginning of a number of the form `0x0000`, then this function returns false and Result is set to 0.
  * if File->At does point to the beginning of a number, then this function returns true and Result will have the value of that number.
  */
-int EatNumberHexadecimal(file_state *File, int *Result) {
+int ExtractNumberHexadecimal(file_state *File, int *Result) {
 	int Success = FALSE;
 	int sign = 1;
 	*Result = 0;
@@ -162,7 +162,7 @@ int EatNumberHexadecimal(file_state *File, int *Result) {
 /* If File->At points to a charcter that can be the beginning of a identifier, then this function returns True, File->At is advnaced past the identifier, and the length of the identifier is returned though Length. 
  * If File->At does not point to a character that can begin an identifier, then 
  */
-int EatIdentifier(file_state *File, int *Length) {
+int ExtractIdentifier(file_state *File, int *Length) {
 	int Success = FALSE;
 	if (!(File->At[0] >= L'0' && File->At[0] <= L'9')) {
 		Success = TRUE;
@@ -292,11 +292,11 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			// @TODO Allow 0d numbers as addresses
 			int Address = 0;
 			identifier_dest IdentifierDest = {.Start = File->At, .Address = CurrentAddress, .Line = File->Line, .Column = File->Column};
-			if (EatNumberHexadecimal(File, &Address)) {
+			if (ExtractNumberHexadecimal(File, &Address)) {
 				ReportErrorConditionally(Address > 0xFFF || Address < 0, &DidErrorOccur, L"[Error L:%d C:%d] The Address provided (0x%X) was not between 0x0 and 0xFFF.\n", File->Line, File->Column, Address);
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode | Address, CurrentAddress, PMD_IsOccupied);
 			}
-			else if (EatIdentifier(File, &IdentifierDest.Length)) {
+			else if (ExtractIdentifier(File, &IdentifierDest.Length)) {
 				AddToPagedList(IdentifierDestinationList, &IdentifierDest);
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode, CurrentAddress, PMD_IsOccupied | PMD_UsedIdentifier);
 			}
@@ -344,7 +344,7 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 				IncrementFilePosition(File, 7);
 				RawOperation = 0xC00;
 			}
-			else if (EatNumberHexadecimal(File, &RawOperation)) {
+			else if (ExtractNumberHexadecimal(File, &RawOperation)) {
 			}
 			else {
 				ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to read an argument for Skipcond operation. Please provide either a named operation (\"lesser\", \"equal\", or \"greater\") or the raw operation value (0x000, 0x400, 0xC000 respectively).\n", File->Line, File->Column);
@@ -360,7 +360,7 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			IncrementFilePosition(File, Keywords[KW_M_SetAddr].Length);
 			AdvancePastWhitespaceOnSameLine(File);
 			
-			ReportErrorConditionally(EatNumberHexadecimal(File, &CurrentAddress) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Unable to Eat a Hexadecimal Number for .SetAddr", File->Line, File->Column);
+			ReportErrorConditionally(ExtractNumberHexadecimal(File, &CurrentAddress) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Unable to Extract a Hexadecimal Number for .SetAddr", File->Line, File->Column);
 
 			ReportErrorConditionally(CurrentAddress > 0xFFF || CurrentAddress < 0, &DidErrorOccur, L"[Error L:%d C:%d] The Address provided (%x) was not between 0x0 and 0xfff.\n", File->Line, File->Column, CurrentAddress);
 		} break;
@@ -374,7 +374,7 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			identifier_source Data = {.Start = File->At, .Value = CurrentAddress - 1, .Line = File->Line, .Column = File->Column};
 
 			ReportErrorConditionally(LastLineOperationWasProcessed != File->Line, &DidErrorOccur, L"[Error L:%d C:%d] Identifiers must follow right after a operation on the same line.\nEx: data 0d0 .Ident Foo\nIf you don't like it, change it!\n", File->Line, File->Column); 
-			ReportErrorConditionally(EatIdentifier(File, &Data.Length) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to find an Identifier Name after .Ident!\n", File->Line, File->Column);
+			ReportErrorConditionally(ExtractIdentifier(File, &Data.Length) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to find an Identifier Name after .Ident!\n", File->Line, File->Column);
 
 			for (int Index = 0; ; Index++) {
 				const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
@@ -401,9 +401,9 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			LastLineOperationWasProcessed = File->Line;
 			int Value = 0;
 			
-			if (EatNumberDecimal(File, &Value)) {
+			if (ExtractNumberDecimal(File, &Value)) {
 			}
-			else if (EatNumberHexadecimal(File, &Value)) {
+			else if (ExtractNumberHexadecimal(File, &Value)) {
 			}
 			else {
 				ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to read an argument for the Data directive. Please provide a number constant within 0 - 65535 (0x0 - 0xffff).\n", File->Line, File->Column);
