@@ -1,6 +1,5 @@
 /* Author: Michael Roskuski <mroskusk@student.fitchburgstate.edu>
  * Date: 2021-11-10
- * Program: Assembler for the fictional Marie computer. Supports the extended instruction set.
  * File: Contains the definitions for the interface between the Platform we're running on, and the Application.
  */
 

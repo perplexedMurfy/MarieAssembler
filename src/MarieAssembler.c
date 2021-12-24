@@ -1,6 +1,6 @@
 /* Author: Michael Roskuski <mroskusk@student.fitchburgstate.edu>
  * Date: 2021-11-10
- * Program: Assembler for the fictional Marie computer. Supports the extended instruction set.
+ * File: Contains the core of the assembler
  */
 
 /*TODO LIST

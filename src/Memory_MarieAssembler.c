@@ -1,7 +1,6 @@
 /* Author: Michael Roskuski <mroskusk@student.fitchburgstate.edu>
  * Date: 2021-11-10
- * Program: Assembler for the fictional Marie computer. Supports the extended instruction set.
- * File: Conatians dynamically sized lists.
+ * File: Defines growable lists
  */
 
 #include "Memory_MarieAssembler.h"

@@ -1,10 +1,9 @@
 /* Author: Michael Roskuski <mroskusk@student.fitchburgstate.edu>
  * Date: 2021-11-10
- * Program: Assembler for the fictional Marie computer. Supports the extended instruction set.
  * File: This file contains all platform spefic code for the win32 platform.
  * Use this as a base if you wish to port this program to another platform.
  * 
- * When building, build the platform layer in a different translation unit than the application. then link the two together.
+ * When building, build the platform layer in a different translation unit than the application. Then link the two together.
  */
 
 #pragma comment(lib, "shell32.lib")
