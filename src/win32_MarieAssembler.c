@@ -19,6 +19,10 @@
 
 #include "Platform_MarieAssembler.h"
 
+void Platform_Breakpoint() {
+	__debugbreak();
+}
+
 size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	LARGE_INTEGER Result = {0};
 	

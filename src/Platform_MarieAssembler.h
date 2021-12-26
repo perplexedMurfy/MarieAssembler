@@ -73,6 +73,7 @@ size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
 wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success);
 
 FILE *Platform_WideFOpen(wchar_t *Path, wchar_t *Mode);
+void Platform_Breakpoint();
 
 //-----
 //~ Functions defined in the application layer
