@@ -38,33 +38,238 @@ size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 	return (size_t)Result.QuadPart;
 }
 
-FILE *Platform_WideFOpen(wchar_t *Path, wchar_t *Mode) {
-	return _wfopen(Path, Mode);
+int IndexOfFromEnd(wchar_t *String, wchar_t Target) {
+	int Result = 0;
+
+	while(String[Result] != L'\0') { Result++; }
+	Result--;
+	
+	for(; String[Result] != L'\0'; Result--) {
+		if (String[Result] == Target) { return Result; }
+	}
+	return -1;
 }
 
-wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success) {
-	wchar_t *Result = 0;
-
-	wchar_t *StartOfFileName = PathFindFileName(Path);
-	int OutputNameLength = IndexOfFromEnd(StartOfFileName, L'.');
-
-	int PathLength = 0;
-	for(int Index = 0; Path[Index] != L'\0'; Index++) {
-		if (Path[Index] == L'\\' ||
-		    Path[Index] == L'/') { // @TODO I'm not totally sure if this is kosher on windows.
-			PathLength = Index + 1;
+int StartsWith(wchar_t *String, wchar_t *Target) {
+	int Result = FALSE;
+	int Length = wcslen(Target);
+	if (Length <= wcslen(String)) {
+		for (int Index = 0; Index <= Length; Index++) {
+			if (Index == Length) { Result = TRUE; break; }
+			if (String[Index] != Target[Index]) { break; }
 		}
 	}
 
-	if (*Success) {
-		Result = calloc(PathLength + OutputNameLength + wcslen(L"OUT_") + 1, sizeof(wchar_t));
-		_snwprintf(Result, PathLength + OutputNameLength + wcslen(L"OUT_") + 1, L"%.*sOUT_%.*s", PathLength, Path, OutputNameLength, StartOfFileName);
-	}
-
-	if (!Result) { *Success = FALSE; }
 	return Result;
 }
 
+wchar_t* GenerateOutputPath(wchar_t *InFileName, wchar_t *PostFix) {
+	int DotIndex = IndexOfFromEnd(InFileName, L'.');
+	int PathSeperatorIndex = Max(IndexOfFromEnd(InFileName, L'\\'), IndexOfFromEnd(InFileName, L'/'));
+	if (DotIndex < PathSeperatorIndex || DotIndex == -1) {
+		// The dot we found was part of the file path.
+		// Or we didn't find a dot.
+		DotIndex = wcslen(InFileName);
+	}
+	
+	int AutoFileNameLength = DotIndex + wcslen(PostFix) + 1;
+	wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
+	
+	_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s%s", DotIndex, InFileName, PostFix);
+
+	return AutoFileName;
+}
+
+const char* HelpMessage =
+	"Usage: MarieAssembler <InFileName> [Output Options]\n"
+	"Where [Output Options] can be any combination of:\n"
+	"  --logisim [FileName] ==> Outputs Logisim rom image at [FileName], or if blank <InFileName>.LogisimImage\n"
+	"  --rawhex [FileName] ==> Outputs a file containing the raw hex for the program at [FileName], or if blank <InFileName>.hex\n"
+	"  --symboltable [FileName] ==> Outputs a file containing a symbol table for the program at [FileName], or if blank <InFileName>.sym\n"
+	"  --listing [FileName] ==> Outputs a file containing a listing for the program at [FileName], or if blank <InFileName>.lst\n";
+
 int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
-	return ApplicationMain(ArgCount, Args);
+	FILE *InFile = 0, *OutLogisim = 0, *OutHex = 0, *OutSymbolTable = 0, *OutListing = 0;
+	int GenLogisim = FALSE, GenHex = FALSE, GenSymbolTable = FALSE, GenListing = FALSE;
+	wchar_t *InFileName = 0;
+	uint64_t InFileSize = 0;
+	int Success = TRUE;
+
+	if (ArgCount == 1) {
+		printf(HelpMessage);
+		Success = FALSE;
+	}
+	
+	for (int Index = 1; Index < ArgCount;) {
+		wchar_t * Arg = Args[Index];
+		
+		if (StartsWith(Arg, L"--logisim")) {
+			if (Index + 1 >= ArgCount) { Arg = L""; }
+			else { Arg = Args[Index + 1]; }
+
+			if (OutLogisim == 0 && GenLogisim == FALSE) {
+				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
+					Index++;
+					OutLogisim = _wfopen(Arg, L"w");
+					if (OutLogisim == 0) {
+						wprintf(L"I could not open the Logisim output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+				}
+				else {
+					GenLogisim = TRUE;
+				}
+			}
+			else {
+				wprintf(L"Option --logisim was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, L"--rawhex")) {
+			if (Index + 1 >= ArgCount) { Arg = L""; }
+			else { Arg = Args[Index + 1]; }
+
+			if (OutHex == 0 && GenHex == FALSE) {
+				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
+					Index++;
+					OutHex = _wfopen(Arg, L"wb");
+					if (OutHex == 0) {
+						wprintf(L"I could not open the raw hex output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+				}
+				else {
+					GenHex = TRUE;
+				}
+			}
+			else {
+				wprintf(L"Option --rawhex was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, L"--symboltable")) {
+			if (Index + 1 >= ArgCount) { Arg = L""; }
+			else { Arg = Args[Index + 1]; }
+
+			if (OutSymbolTable == 0 && GenSymbolTable == FALSE) {
+				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
+					Index++;
+					OutSymbolTable = _wfopen(Arg, L"w,ccs=UNICODE");
+					if (OutSymbolTable == 0) {
+						wprintf(L"I could not open the symbol table output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+				}
+				else {
+					GenSymbolTable = TRUE;
+				}
+			}
+			else {
+				wprintf(L"Option --symboltable was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, L"--listing")) {
+			if (Index + 1 >= ArgCount) { Arg = L""; }
+			else { Arg = Args[Index + 1]; }
+
+			if (OutListing == 0 && GenListing == FALSE) {
+				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
+					Index++;
+					OutListing = _wfopen(Arg, L"w,ccs=UNICODE");
+					if (OutListing == 0) {
+						wprintf(L"I could not open the listing output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+				}
+				else {
+					GenListing = TRUE;
+				}
+			}
+			else {
+				wprintf(L"Option --listing was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, L"--")) {
+			wprintf(L"Unknown commandline operation encountered: \"%s\"\n", Arg);
+			printf(HelpMessage);
+			Success = FALSE;
+			break;
+		}
+		else if (InFile == 0) { // This must be our one input file.
+			InFile = _wfopen(Arg, L"rb");
+			if (InFile == 0) {
+				wprintf(L"I could not open the input file \"%s\" for reading!\n", Arg);
+				Success = FALSE;
+				break;
+			}
+			if (Success) {
+				InFileSize = Platform_GetFileSize(Arg, &Success);
+				InFileName = Arg;
+			}
+		}
+		else {
+			wprintf(L"Unknown commandline operation encountered: \"%s\"\n", Arg);
+			printf(HelpMessage);
+			Success = FALSE;
+			break;
+		}
+
+		Index++;
+	}
+
+	if (GenLogisim) {
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".LogisimImage");
+		OutLogisim = _wfopen(AutoFileName, L"w");
+		if (OutLogisim == 0) {
+			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+			Success = FALSE;
+		}
+		free(AutoFileName);
+	}
+	if (GenHex) {
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".hex");
+		OutHex = _wfopen(AutoFileName, L"wb");
+		if (OutLogisim == 0) {
+			wprintf(L"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+			Success = FALSE;
+		}
+		free(AutoFileName);
+	}
+	if (GenListing) {
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
+		OutListing = _wfopen(AutoFileName, L"w,ccs=UNICODE");
+		if (OutLogisim == 0) {
+			wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+			Success = FALSE;
+		}
+		free(AutoFileName);
+	}
+	if (GenSymbolTable) {
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
+		OutSymbolTable = _wfopen(AutoFileName, L"w,ccs=UNICODE");
+		if (OutLogisim == 0) {
+			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+			Success = FALSE;
+		}
+		free(AutoFileName);
+	}
+
+	if (Success) {
+		Success = ApplicationMain(InFile, InFileSize, OutLogisim, OutHex, OutSymbolTable, OutListing);
+	}
+	else {
+		printf("Exiting without invoking the assembler.\n");
+	}
+
+	return Success;
 }
