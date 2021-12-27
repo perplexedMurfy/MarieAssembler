@@ -63,6 +63,23 @@ int StartsWith(wchar_t *String, wchar_t *Target) {
 	return Result;
 }
 
+wchar_t* GenerateOutputPath(wchar_t *InFileName, wchar_t *PostFix) {
+	int DotIndex = IndexOfFromEnd(InFileName, L'.');
+	int PathSeperatorIndex = Max(IndexOfFromEnd(InFileName, L'\\'), IndexOfFromEnd(InFileName, L'/'));
+	if (DotIndex < PathSeperatorIndex || DotIndex == -1) {
+		// The dot we found was part of the file path.
+		// Or we didn't find a dot.
+		DotIndex = wcslen(InFileName);
+	}
+	
+	int AutoFileNameLength = DotIndex + wcslen(PostFix) + 1;
+	wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
+	
+	_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s%s", DotIndex, InFileName, PostFix);
+
+	return AutoFileName;
+}
+
 const char* HelpMessage =
 	"Usage: MarieAssembler <InFileName> [Output Options]\n"
 	"Where [Output Options] can be any combination of:\n"
@@ -211,12 +228,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	}
 
 	if (GenLogisim) {
-		// @TODO this block could be pulled out into a function.
-		int DotIndex = IndexOfFromEnd(InFileName, L'.');
-		int AutoFileNameLength = DotIndex + wcslen(L".LogisimImage") + 1;
-		wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
-		_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s.LogisimImage", DotIndex, InFileName);
-
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".LogisimImage");
 		OutLogisim = _wfopen(AutoFileName, L"w");
 		if (OutLogisim == 0) {
 			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
@@ -225,11 +237,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 		free(AutoFileName);
 	}
 	if (GenHex) {
-		int DotIndex = IndexOfFromEnd(InFileName, L'.');
-		int AutoFileNameLength = DotIndex + wcslen(L".hex") + 1;
-		wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
-		_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s.hex", DotIndex, InFileName);
-
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".hex");
 		OutHex = _wfopen(AutoFileName, L"wb");
 		if (OutLogisim == 0) {
 			wprintf(L"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
@@ -238,11 +246,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 		free(AutoFileName);
 	}
 	if (GenListing) {
-		int DotIndex = IndexOfFromEnd(InFileName, L'.');
-		int AutoFileNameLength = DotIndex + wcslen(L".lst") + 1;
-		wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
-		_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s.lst", DotIndex, InFileName);
-
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
 		OutListing = _wfopen(AutoFileName, L"w,ccs=UNICODE");
 		if (OutLogisim == 0) {
 			wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
@@ -251,11 +255,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 		free(AutoFileName);
 	}
 	if (GenSymbolTable) {
-		int DotIndex = IndexOfFromEnd(InFileName, L'.');
-		int AutoFileNameLength = DotIndex + wcslen(L".sym") + 1;
-		wchar_t *AutoFileName = calloc(AutoFileNameLength, sizeof(wchar_t));
-		_snwprintf(AutoFileName, AutoFileNameLength, L"%.*s.sym", DotIndex, InFileName);
-
+		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
 		OutSymbolTable = _wfopen(AutoFileName, L"w,ccs=UNICODE");
 		if (OutLogisim == 0) {
 			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
