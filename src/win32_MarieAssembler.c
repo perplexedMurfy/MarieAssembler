@@ -239,7 +239,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	if (GenHex) {
 		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".hex");
 		OutHex = _wfopen(AutoFileName, L"wb");
-		if (OutLogisim == 0) {
+		if (OutHex == 0) {
 			wprintf(L"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 			Success = FALSE;
 		}
@@ -248,7 +248,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	if (GenListing) {
 		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
 		OutListing = _wfopen(AutoFileName, L"w,ccs=UNICODE");
-		if (OutLogisim == 0) {
+		if (OutListing == 0) {
 			wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 			Success = FALSE;
 		}
@@ -257,8 +257,8 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	if (GenSymbolTable) {
 		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
 		OutSymbolTable = _wfopen(AutoFileName, L"w,ccs=UNICODE");
-		if (OutLogisim == 0) {
-			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+		if (OutSymbolTable == 0) {
+			wprintf(L"I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 			Success = FALSE;
 		}
 		free(AutoFileName);
