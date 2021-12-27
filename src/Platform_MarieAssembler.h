@@ -61,6 +61,18 @@
  */
 size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
 
+/* Auto generates the output file name based on the input file name.
+ * This is platform spefic because different platforms have different file path conventions.
+ * @Param Path input file path
+ * @Param Arena Memory Arena
+ * @Param Indicates if this function was successful.
+ * Example:
+ *  Path = L"C:\Foo\Bar\Test.MarieAsm"
+ *  Result = L"C:\Foo\Bar\OUT_Test"
+ */
+wchar_t *Platform_CreateOutputFileName(wchar_t *Path, int *Success);
+
+FILE *Platform_WideFOpen(wchar_t *Path, wchar_t *Mode);
 void Platform_Breakpoint();
 
 //-----
@@ -68,12 +80,9 @@ void Platform_Breakpoint();
 
 /* "Main" function for the application
  * While the application's actual entry point is in the platform spefic file, ApplicationMain() actually runs the application.
- * @Params InFile  Handle to the input file
- * @Params LogisimOut  Handle where a Logisim rom file should be writen to
- * @Params RawHexOut  Handle where file containing a raw hex output should be writen to
- * @Params SymbolTableOut  Handle where a symbol table should be writen to
- * @Params ListingOut  Handle where a assembly listing should be writen to
+ * @Params ArgCount The Amount of stings in Args
+ * @Params Args A list of strings that contain the arguments to this application.
  */
-int ApplicationMain(FILE *InFile, int InFileSize, FILE *OutLogisim, FILE *OutRawHex, FILE *OutSymbolTable, FILE *OutListing);
+int ApplicationMain(int ArgCount, wchar_t **Args);
 
 #endif

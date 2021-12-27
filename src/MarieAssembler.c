@@ -451,7 +451,25 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 	return !DidErrorOccur;
 }
 
-int OutputLogisimImage(FILE *FileStream) {
+// String should be a null terminated 
+int IndexOfFromEnd(wchar_t *String, wchar_t Target) {
+	int Result = 0;
+
+	while(String[Result] != L'\0') { Result++; }
+	Result--;
+	
+	for(; String[Result] != L'\0'; Result--) {
+		if (String[Result] == Target) { return Result; }
+	}
+	return -1;
+}
+
+void OutputLogisimImage(wchar_t *FileName) {
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w");
+	if (!FileStream) {
+		wprintf(L"[Error Output] Could not open file \"%s\" for output.\n", FileName);
+	}
+	
 	fprintf(FileStream, "v2.0 raw\r\n");
 
 	int Consectuive = 0;
@@ -474,20 +492,18 @@ int OutputLogisimImage(FILE *FileStream) {
 	}
 
 	fclose(FileStream);
-
-	return TRUE; // @TODO @NoMerge
 }
 
-int OutputRawHex(FILE *FileStream) {
+void OutputRawHex(wchar_t *FileName) {
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w");
+
 	fwrite(Program, sizeof(Program), 1, FileStream);
 	
 	fclose(FileStream);
-
-	return TRUE; // @TODO @NoMerge
 }
 
-int OutputSymbolTable(FILE *FileStream, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	//FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
+void OutputSymbolTable(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
 
 	int IdentifierMaxLength = 0;
 	for (int Index = 0; ; Index++) {
@@ -519,12 +535,10 @@ int OutputSymbolTable(FILE *FileStream, paged_list *IdentifierDestinationList, p
 		fwprintf(FileStream, L"\n");
 	}
 	fclose(FileStream);
-
-	return TRUE; // @TODO @NoMerge
 }
 
-int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	//FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
+void OutputListing(wchar_t *FileName, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
+	FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
 	int InMemoryGap = FALSE;
 
 	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string.
@@ -853,14 +867,14 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 	}
 	
 	fclose(FileStream);
-
-	return TRUE; // @TODO @NoMerge
 }
 
-wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
+wchar_t *LoadFileIntoMemory(wchar_t *FileName, int *Success) {
 	wchar_t *Result = 0;
+	size_t FileSize = Platform_GetFileSize(FileName, Success);
 
 	if (*Success) {
+		FILE *FileStream = Platform_WideFOpen(FileName, L"rb");	
 		uint8_t ByteOrderMark[4];
 		fread(&ByteOrderMark, sizeof(uint8_t), Min(4, FileSize), FileStream);
 		fseek(FileStream, 0, SEEK_SET);
@@ -996,51 +1010,66 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 	return Result;
 }
 
-int ApplicationMain(FILE *InFile, int InFileSize, FILE *OutLogisim, FILE *OutRawHex, FILE *OutSymbolTable, FILE *OutListing) {
-	int Success = TRUE;
-	if (InFile == 0) {
-		Success = FALSE;
-		printf("A input file was not provided!\n");
+int ApplicationMain(int ArgCount, wchar_t **Args) {
+	if (!(ArgCount == 2 || ArgCount == 3)) {
+		const wchar_t *HelpMessage = 
+			L"* Usage: %s <Path To Source> [Output File Name]\n"
+			"* This program compiles Marie Assembly code into logisim rom images.\n"
+			"* <Path To Source> is the path to the assembly code you'd like to assemble.\n"
+			"* [Output File Name] is the name of the files that this program will emit.\n"
+			"** If [Output File Name] is not provied, then this program generates [Output File Name] in the form of OUT_<File Name>.\n"
+			"* For Every compliation:\n"
+			"** A Raw Image file will be emitted as [Output File Name].hex\n"
+			"** A listing file will be emitted as [Output File Name].lst\n"
+			"** A symbol table will be output as [Output File Name].sym\n"
+			"** A logisim image file will bit output as [Output File Name].LogisimImage\n";
+		wprintf(HelpMessage, Args[0]);
+		return 0;
 	}
 
-	if (Success) {
-		file_state FileState = {
-			.Line = 1,
-			.Column = 0,
-		};
-		FileState.At = LoadFileIntoMemory(InFile, InFileSize, &Success);
+	int Success = TRUE;
 
-		paged_list *IdentifierDestinationList = AllocatePagedList(sizeof(identifier_dest), 10);
-		paged_list *IdentifierSourceList = AllocatePagedList(sizeof(identifier_source), 10);
-		
-		Success = Assemble(&FileState, IdentifierDestinationList, IdentifierSourceList);
-		
-		if (Success) {
-			if ((OutLogisim == 0) && (OutRawHex == 0) && (OutSymbolTable == 0) && (OutListing == 0)) {
-				Success = FALSE;
-				printf("Warning: No outputs were were requested. No output files are being generated.\n");
-			}
+	file_state FileState = {
+		.Line = 1,
+		.Column = 0,
+	};
+	FileState.At = LoadFileIntoMemory(Args[1], &Success);
+	if (Success == FALSE) { return 0; }
 
-			if (OutRawHex != 0) {
-				int Temp = OutputRawHex(OutRawHex);
-				Success = Success ? Temp : FALSE; // only take on the new output value 
-			}
-			if (OutLogisim != 0) {
-				int Temp = OutputLogisimImage(OutLogisim);
-				Success = Success ? Temp : FALSE;
-			}
-			if (OutSymbolTable != 0) {
-				int Temp = OutputSymbolTable(OutSymbolTable, IdentifierDestinationList, IdentifierSourceList);
-				Success = Success ? Temp : FALSE;
-			}
-			if (OutListing != 0) {
-				int Temp = OutputListing(OutListing, IdentifierDestinationList, IdentifierSourceList);
-				Success = Success ? Temp : FALSE;
-			}
-			
+	paged_list *IdentifierDestinationList = AllocatePagedList(sizeof(identifier_dest), 10);
+	paged_list *IdentifierSourceList = AllocatePagedList(sizeof(identifier_source), 10);
+	
+	if (Assemble(&FileState, IdentifierDestinationList, IdentifierSourceList)) {
+		wchar_t *OutputFileName;
+		int OutputNameLength;
+
+		if (ArgCount == 2) {
+			OutputFileName = Platform_CreateOutputFileName(Args[1], &Success);
 		}
+		else {
+			OutputFileName = Args[2];
+		}
+
+		OutputNameLength = wcslen(OutputFileName) + 1;
+	
+		int Size = OutputNameLength;
+		
+		wchar_t *OutputLogisimImageName = calloc(sizeof(wchar_t), Size + 13);
+		wchar_t *OutputRawHexName = calloc(sizeof(wchar_t), Size + 4);
+		wchar_t *OutputSymbolTableName = calloc(sizeof(wchar_t), Size + 4);
+		wchar_t *OutputListingName = calloc(sizeof(wchar_t), Size + 4);
+
+		_snwprintf(OutputLogisimImageName, Size + 13, L"%.*s.LogisimImage", OutputNameLength + 4, OutputFileName);
+		_snwprintf(OutputRawHexName, Size + 4, L"%.*s.hex", OutputNameLength + 4, OutputFileName);	
+		_snwprintf(OutputSymbolTableName, Size + 4, L"%.*s.sym", OutputNameLength + 4, OutputFileName);
+		_snwprintf(OutputListingName, Size + 4, L"%.*s.lst", OutputNameLength + 4, OutputFileName);
+
+		OutputRawHex(OutputRawHexName);
+		OutputLogisimImage(OutputLogisimImageName);
+		OutputSymbolTable(OutputSymbolTableName, IdentifierDestinationList, IdentifierSourceList);
+		OutputListing(OutputListingName, IdentifierDestinationList, IdentifierSourceList);
 	}
 
 	// @TODO output a value that repersents our success.
-	return Success;
+	return 0;
 }
