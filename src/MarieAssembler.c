@@ -737,7 +737,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
 							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
@@ -745,7 +745,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					}
 					else {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[%.*s]", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
 							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
@@ -756,7 +756,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					OpcodeMemonic = Keywords[KW_Loadi].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
 						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
@@ -832,7 +832,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 
 				case(EMIT_Jumpi): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"Goto *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintfCheck(&Success, FileStream, L"Goto RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
 						fwprintfCheck(&Success, FileStream, L"Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
