@@ -451,22 +451,68 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 	return !DidErrorOccur;
 }
 
+int fprintfCheck(int *Success, FILE *File, char *FormatStr, ...) {
+	va_list ArgList;
+	va_start(ArgList, FormatStr);
+
+	int Result = vfprintf(File, FormatStr, ArgList);
+	if (Result < 0) { *Success = FALSE; }
+	
+	va_end(ArgList);
+	
+	if (!Success) {
+		return Result = 0;
+	}
+	return Result;
+}
+
+int fwprintfCheck(int *Success, FILE *File, wchar_t *FormatStr, ...) {
+	va_list ArgList;
+	va_start(ArgList, FormatStr);
+
+	int Result = vfwprintf(File, FormatStr, ArgList);
+	if (Result < 0) { *Success = FALSE; }
+	
+	va_end(ArgList);
+
+	if (!Success) {
+		return Result = 0;
+	}
+	return Result;
+}
+
+int swprintfCheck(int *Success, wchar_t *Buffer, size_t Size, wchar_t *FormatStr, ...) {
+	va_list ArgList;
+	va_start(ArgList, FormatStr);
+
+	int Result = vswprintf(Buffer, Size, FormatStr, ArgList);
+	if (Result < 0) { *Success = FALSE; }
+	
+	va_end(ArgList);
+
+	if (!Success) {
+		return Result = 0;
+	}
+	return Result;
+}
+
 int OutputLogisimImage(FILE *FileStream) {
-	fprintf(FileStream, "v2.0 raw\r\n");
+	int Success = TRUE;
+	fprintfCheck(&Success, FileStream, "v2.0 raw\r\n");
 
 	int Consectuive = 0;
 	int Prev = Program[0];
-	for (int Index = 0; Index <= Kilobyte(4); Index++) {
+	for (int Index = 0; Index <= Kilobyte(4) && Success; Index++) {
 		if (Prev == Program[Index] && Index != Kilobyte(4)) {
 			Consectuive++;
 		}
 		else {
 			char Buffer[16] = {0};
 			if (Consectuive == 1) {
-				fprintf(FileStream, "%X\n", Prev);
+				fprintfCheck(&Success, FileStream, "%X\n", Prev);
 			}
 			else {
-				fprintf(FileStream, "%d*%X\n", Consectuive, Prev);
+				fprintfCheck(&Success, FileStream, "%d*%X\n", Consectuive, Prev);
 			}
 			Consectuive = 1;
 		}
@@ -475,21 +521,30 @@ int OutputLogisimImage(FILE *FileStream) {
 
 	fclose(FileStream);
 
-	return TRUE; // @TODO @NoMerge
+	if (Success == FALSE) {
+		printf("[Error Logisim] There was a error encountered while writing to the Logisim output file!\n");
+	}
+	
+	return Success;
 }
 
 int OutputRawHex(FILE *FileStream) {
-	fwrite(Program, sizeof(Program), 1, FileStream);
+	int Result = fwrite(Program, sizeof(Program), 1, FileStream);
+	int Success = Result == 1;
 	
 	fclose(FileStream);
 
-	return TRUE; // @TODO @NoMerge
+	if (Success == FALSE) {
+		printf("[Error Raw Hex] There was a error encountered while writing to the hex output file!\n");
+	}
+
+	return Success;
 }
 
 int OutputSymbolTable(FILE *FileStream, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	//FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
-
 	int IdentifierMaxLength = 0;
+	int Success = TRUE;
+
 	for (int Index = 0; ; Index++) {
 		const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
 		if (IdentifierSource == 0) { break; }
@@ -501,30 +556,35 @@ int OutputSymbolTable(FILE *FileStream, paged_list *IdentifierDestinationList, p
 
 	IdentifierMaxLength = Max(IdentifierMaxLength, 10);
 
-	fwprintf(FileStream, L"| %- *s | Identifier's Value | Addresses that use Identifier\n", IdentifierMaxLength, L"Identifier");
-	for (int SourceIndex = 0; ; SourceIndex++) {
+	fwprintfCheck(&Success, FileStream, L"| %- *s | Identifier's Value | Addresses that use Identifier\n", IdentifierMaxLength, L"Identifier");
+	for (int SourceIndex = 0; Success; SourceIndex++) {
 		const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, SourceIndex);
 		if (IdentifierSource == 0) { break; }
 		
-		fwprintf(FileStream, L"| %- *.*s | 0x%-0*.3X | ", IdentifierMaxLength, IdentifierSource->Length, IdentifierSource->Start, 18 - 2, IdentifierSource->Value);
-		for (int DestIndex = 0; ; DestIndex++) {
+		fwprintfCheck(&Success, FileStream, L"| %- *.*s | 0x%-0*.3X | ", IdentifierMaxLength, IdentifierSource->Length, IdentifierSource->Start, 18 - 2, IdentifierSource->Value);
+		
+		for (int DestIndex = 0; Success; DestIndex++) {
 			const identifier_dest *IdentifierDest = GetFromPagedList(IdentifierDestinationList, DestIndex);
 			if (IdentifierDest == 0) { break; }
 			
 			if ((IdentifierSource->Length == IdentifierDest->Length) &&
 			    CompareStr(IdentifierSource->Start, IdentifierDest->Start, IdentifierSource->Length)) {
-				fwprintf(FileStream, L" 0x%-0.3X", IdentifierDest->Address);
+				fwprintfCheck(&Success, FileStream, L" 0x%-0.3X", IdentifierDest->Address);
 			}
 		}
-		fwprintf(FileStream, L"\n");
+		fwprintfCheck(&Success, FileStream, L"\n");
 	}
 	fclose(FileStream);
 
-	return TRUE; // @TODO @NoMerge
+	if (Success == FALSE) {
+		printf("[Error Symbol Table] There was a error encountered while writing to the symbol table output file!\n");
+	}
+
+	return Success;
 }
 
 int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	//FILE *FileStream = Platform_WideFOpen(FileName, L"w,ccs=UNICODE");
+	int Success = TRUE;
 	int InMemoryGap = FALSE;
 
 	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string.
@@ -549,18 +609,18 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 	// Max length is "skipcond LongstIdentifier .Ident LongestIdentifier"
 	int ListingMaxLength = Keywords[KW_Skipcond].Length + 1 + OperandMaxLength + 1 + Keywords[KW_M_Ident].Length + 1 + OperandMaxLength + 1;
 	
-	fwprintf(FileStream, L"| Address | Opcode | %- *s | High Level Code\n", ListingMaxLength, L"Listing");
+	fwprintfCheck(&Success, FileStream, L"| Address | Opcode | %- *s | High Level Code\n", ListingMaxLength, L"Listing");
 	
-	for (int Index = 0; Index < Kilobyte(4); Index++) {
+	for (int Index = 0; Index < Kilobyte(4) && Success; Index++) {
 		int ListingCharacterCount = 0;
 		if (ProgramMetaData[Index] & PMD_IsOccupied) {
 			if (InMemoryGap) {
 				InMemoryGap = FALSE;
 				Assert(ListingMaxLength >= 14);
-				fwprintf(FileStream, L"|         |        | .SetAddr 0x%0.3X% *s |\n", Index, ListingMaxLength - 14, L"");
+				fwprintfCheck(&Success, FileStream, L"|         |        | .SetAddr 0x%0.3X% *s |\n", Index, ListingMaxLength - 14, L"");
 			}
 
-			fwprintf(FileStream, L"| 0x%0.3X   | 0x%0.4X | ", Index, Program[Index]);
+			fwprintfCheck(&Success, FileStream, L"| 0x%0.3X   | 0x%0.4X | ", Index, Program[Index]);
 
 			identifier_dest *IdentifierDestination = 0;
 			if (ProgramMetaData[Index] & PMD_UsedIdentifier) {
@@ -579,7 +639,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 
 
 			if (ProgramMetaData[Index] & PMD_IsData) {
-				ListingCharacterCount += fwprintf(FileStream, L"data 0x%0.4X", Program[Index]);
+				ListingCharacterCount += fwprintfCheck(&Success, FileStream, L"data 0x%0.4X", Program[Index]);
 			}
 			else {
 				wchar_t *OpcodeMemonic = 0;
@@ -592,10 +652,10 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					OpcodeMemonic = Keywords[KW_Load].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]/", Program[Index] & 0x0FFF);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]/", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Store].Opcode) {
@@ -607,18 +667,18 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]", Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -627,25 +687,25 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"-%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"-RAM[0x%0.3X]", Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"-RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s - %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s - RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s - RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
 				else if (Opcode == Keywords[KW_Input].Opcode) {
 					OpcodeMemonic = Keywords[KW_Input].String;
 					EmitCode = EMIT_No;
-					_snwprintf(ContentsOfAC, ContentsOfACSize, L"Input");
+					swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"Input");
 				}
 				else if (Opcode == Keywords[KW_Output].Opcode) {
 					OpcodeMemonic = Keywords[KW_Output].String;
@@ -666,7 +726,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				else if (Opcode == Keywords[KW_Clear].Opcode) {
 					OpcodeMemonic = Keywords[KW_Clear].String;
 					EmitCode = EMIT_Clear;
-					_snwprintf(ContentsOfAC, ContentsOfACSize, L"0");
+					swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"0");
 				}
 				else if (Opcode == Keywords[KW_Jumpi].Opcode) {
 					OpcodeMemonic = Keywords[KW_Jumpi].String;
@@ -677,18 +737,18 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					EmitCode = EMIT_No;
 					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + *%.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
 						}
 						else {
-							_snwprintf(ContentsOfAC, ContentsOfACSize, L"%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
+							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -696,17 +756,17 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					OpcodeMemonic = Keywords[KW_Loadi].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"*%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Storei].Opcode) {
 					OpcodeMemonic = Keywords[KW_Storei].String;
 					EmitCode = EMIT_Storei;
 				}
-				ListingCharacterCount += fwprintf(FileStream, L"%s", OpcodeMemonic);
+				ListingCharacterCount += fwprintfCheck(&Success, FileStream, L"%s", OpcodeMemonic);
 
 				if (OpcodeMemonic != Keywords[KW_Halt].String &&
 				    OpcodeMemonic != Keywords[KW_Input].String &&
@@ -714,19 +774,19 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				    OpcodeMemonic != Keywords[KW_Clear].String) {
 					if (ProgramMetaData[Index] & PMD_UsedIdentifier) {
 						Assert(IdentifierDestination != FALSE);
-						ListingCharacterCount += fwprintf(FileStream, L" %.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" %.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
 						if (OpcodeMemonic == Keywords[KW_Skipcond].String) {
 							switch(Program[Index] & 0x0FFF) {
-							case(0x000): ListingCharacterCount += fwprintf(FileStream, L" lesser"); break;
-							case(0x400): ListingCharacterCount += fwprintf(FileStream, L" equal"); break;
-							case(0xC00): ListingCharacterCount += fwprintf(FileStream, L" greater"); break;
-							default: ListingCharacterCount += fwprintf(FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF); break;
+							case(0x000): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" lesser"); break;
+							case(0x400): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" equal"); break;
+							case(0xC00): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" greater"); break;
+							default: ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF); break;
 							}
 						}
 						else {
-							ListingCharacterCount += fwprintf(FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF);
+							ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -736,20 +796,23 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				for (int IdentifierIndex = 0; ; IdentifierIndex++) {
 					const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, IdentifierIndex);
 					if (IdentifierSource == 0) {
-						fwprintf(FileStream, L" .Ident COULD NOT RESOLVE IDENTIFER DEFINITION");
+						fwprintfCheck(&Success, FileStream, L" .Ident COULD NOT RESOLVE IDENTIFER DEFINITION");
 						wprintf(L"[Error Lising] Failed to resolve an Identifier defined at address 0x%0.3X\n", Index);
+						Success = FALSE;
 						break;
 					}
 					if (IdentifierSource->Value == Index) {
-						ListingCharacterCount += fwprintf(FileStream, L" .Ident %.*s", IdentifierSource->Length, IdentifierSource->Start);
+						ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" .Ident %.*s", IdentifierSource->Length, IdentifierSource->Start);
 						break;
 					}
 				}
 			}
-			fwprintf(FileStream, L"% *s | ", ListingMaxLength - ListingCharacterCount, L"");
+			
+			fwprintfCheck(&Success, FileStream, L"% *s | ", ListingMaxLength - ListingCharacterCount, L"");
+
 			if (EmitIndentNextLine) {
 				EmitIndentNextLine = FALSE;
-				fwprintf(FileStream, L"    ");
+				fwprintfCheck(&Success, FileStream, L"    ");
 			}
 			
 			{
@@ -760,92 +823,93 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					
 				case(EMIT_Jump): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"Goto %.*s // 0x%0.3X", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"Goto %.*s // 0x%0.3X", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintf(FileStream, L"Goto 0x%0.3X", Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"Goto 0x%0.3X", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpi): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"Goto *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintfCheck(&Success, FileStream, L"Goto *%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpstore): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"%.*s = PC\n", IdentifierDestination->Length, IdentifierDestination->Start);
-						fwprintf(FileStream, L"|         |        | %- *s | % *sGoto (%.*s + 0x1) // (0x%0.3X + 0x1)", ListingMaxLength, L"", EmitIndentNextLine ? 0 : 4, L"", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"%.*s = PC\n", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintfCheck(&Success, FileStream, L"|         |        | %- *s | % *sGoto (%.*s + 0x1) // (0x%0.3X + 0x1)", ListingMaxLength, L"", EmitIndentNextLine ? 0 : 4, L"", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintf(FileStream, L"0x%0.3X = PC\n", Program [Index] & 0x0FFF);
-						fwprintf(FileStream, L"|         |        | %- *s | Goto (0x%0.3X + 0x1)", ListingMaxLength, L"", Program[Index] & 0x0FFF);
+						fwprintfCheck(&Success, FileStream, L"0x%0.3X = PC\n", Program [Index] & 0x0FFF);
+						fwprintfCheck(&Success, FileStream, L"|         |        | %- *s | Goto (0x%0.3X + 0x1)", ListingMaxLength, L"", Program[Index] & 0x0FFF);
 					}
 				} break;
 
 				case(EMIT_Skipcond): {
 					if ((Program[Index] & 0x0FFF) == 0xC00) { // Greater
-						fwprintf(FileStream, L"if ((%s) <= 0)", ContentsOfAC);
+						fwprintfCheck(&Success, FileStream, L"if ((%s) <= 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x400) { // Equal
-						fwprintf(FileStream, L"if ((%s) != 0)", ContentsOfAC);
+						fwprintfCheck(&Success, FileStream, L"if ((%s) != 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x000) { // Lesser
-						fwprintf(FileStream, L"if ((%s) >= 0)", ContentsOfAC);
+						fwprintfCheck(&Success, FileStream, L"if ((%s) >= 0)", ContentsOfAC);
 					}
 					else { // Unknown
-						fwprintf(FileStream, L"Skip next if (unknown operation)");
+						fwprintfCheck(&Success, FileStream, L"Skip next if (unknown operation)");
 					}
 					EmitIndentNextLine = TRUE;
 				} break;
 
 				case(EMIT_Store): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"%.*s = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintfCheck(&Success, FileStream, L"%.*s = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"RAM[0x%0.3x] = %s", Program[Index] & 0xFFF, ContentsOfAC);
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3x]", Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"RAM[0x%0.3x] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3x]", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Storei): {
 					if (IdentifierDestination) {
-						fwprintf(FileStream, L"RAM[%.*s] = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
+						fwprintfCheck(&Success, FileStream, L"RAM[%.*s] = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
 					}
 					else {
-						fwprintf(FileStream, L"RAM[RAM[0x%0.3X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
-						_snwprintf(ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0xFFF);
+						fwprintfCheck(&Success, FileStream, L"RAM[RAM[0x%0.3X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0xFFF);
 					}
 					
 				} break;
 
 				case(EMIT_Clear): {
-					fwprintf(FileStream, L"AC = 0");
+					fwprintfCheck(&Success, FileStream, L"AC = 0");
 				} break;
 
 				case(EMIT_Output): {
-					fwprintf(FileStream, L"Output = %s", ContentsOfAC);
+					fwprintfCheck(&Success, FileStream, L"Output = %s", ContentsOfAC);
 				} break;
 
 				case(EMIT_Halt): {
-					fwprintf(FileStream, L"End execution");
+					fwprintfCheck(&Success, FileStream, L"End execution");
 				} break;
 
 				default: {
 					wprintf(L"[Error Listing] We Tried to emit a invalid emit code! Something is wrong with the compiler\n");
+					Success = FALSE;
 				} break;
 				}
 				EmitCode = EMIT_No;	
 			}
 			
-			fwprintf(FileStream, L"\n");
+			fwprintfCheck(&Success, FileStream, L"\n");
 		}
 		else {
 			InMemoryGap = TRUE;
@@ -854,7 +918,11 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 	
 	fclose(FileStream);
 
-	return TRUE; // @TODO @NoMerge
+	if (Success == FALSE) {
+		printf("[Error Listing] There was a error encountered while writing to the listing output file!\n");
+	}
+	
+	return Success;
 }
 
 wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
@@ -1021,26 +1089,21 @@ int ApplicationMain(FILE *InFile, int InFileSize, FILE *OutLogisim, FILE *OutRaw
 				printf("Warning: No outputs were were requested. No output files are being generated.\n");
 			}
 
-			if (OutRawHex != 0) {
-				int Temp = OutputRawHex(OutRawHex);
-				Success = Success ? Temp : FALSE; // only take on the new output value 
+			if ((OutRawHex != 0) && (Success)) {
+				Success = OutputRawHex(OutRawHex);
 			}
-			if (OutLogisim != 0) {
-				int Temp = OutputLogisimImage(OutLogisim);
-				Success = Success ? Temp : FALSE;
+			if ((OutLogisim != 0) && (Success)) {
+				Success = OutputLogisimImage(OutLogisim);
 			}
-			if (OutSymbolTable != 0) {
-				int Temp = OutputSymbolTable(OutSymbolTable, IdentifierDestinationList, IdentifierSourceList);
-				Success = Success ? Temp : FALSE;
+			if ((OutSymbolTable != 0) && (Success)) {
+				Success = OutputSymbolTable(OutSymbolTable, IdentifierDestinationList, IdentifierSourceList);
 			}
-			if (OutListing != 0) {
-				int Temp = OutputListing(OutListing, IdentifierDestinationList, IdentifierSourceList);
-				Success = Success ? Temp : FALSE;
+			if ((OutListing != 0) && (Success)) {
+				Success = OutputListing(OutListing, IdentifierDestinationList, IdentifierSourceList);
 			}
 			
 		}
 	}
 
-	// @TODO output a value that repersents our success.
 	return Success;
 }
