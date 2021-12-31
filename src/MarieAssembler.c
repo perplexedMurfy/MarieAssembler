@@ -25,38 +25,55 @@ global_var uint8_t ProgramMetaData[Kilobyte(4)] = {0};
 
 /* Increases File->At pointer by Count characters.
  * This function also keeps File->Column and File->Line.
+ * Returns the difference between the inital index and the new index in bytes.
  */
-void IncrementFilePosition(file_state *File, int Count) {
-	Assert(Count >= 0);
+int IncrementFilePosition(file_state *File, int CharCount) {
+	Assert(CharCount >= 0);
+	uintptr_t InitalPtr = (uintptr_t)File->At;
 	
-	for (; Count != 0; Count--) {
-		if ((File->At[0] & 0xD800) == 0xD800) {
-			File->Column  -= 1;
+	for (; CharCount != 0; CharCount--) {
+		if ((File->At[0] & 0xF8) == 0xF0) { // 4 byte charcter
+			File->At += 4;
 		}
-		File->At += 1;
+		else if ((File->At[0] & 0xF0) == 0xE0) { // 3 byte charcter
+			File->At += 3;
+		}
+		else if ((File->At[0] & 0xE0) == 0xC0) { // 2 byte charcter
+			File->At += 2;
+		}
+		else if ((File->At[0] & 0xC0) == 0x80) { // Continuation byte
+			Assert(FALSE); // We should never begin this loop with a continuation byte.
+		}
+		else { // 1 byte character
+			File->At += 1;
+		}
+		
 		File->Column += 1;
 		if (File->At[0] == '\n') {
 			File->Column = 0;
 			File->Line += 1;
 		}
 	}
+
+	Assert(((uintptr_t)File->At) > InitalPtr);
+	return ((uintptr_t)File->At) - InitalPtr;
 }
 
 /* Advances File->At past all whitespace and comments.
  */
 void AdvancePastWhitespaceAndComments(file_state *File) {
-	while (File->At[0] == L' '  ||
-	       File->At[0] == L'\n' ||
-	       File->At[0] == L'\r' ||
-	       File->At[0] == L'\t' ||
-	       File->At[0] == L'/') {
+	while (File->At[0] == ' '  ||
+	       File->At[0] == '\n' ||
+	       File->At[0] == '\r' ||
+	       File->At[0] == '\t' ||
+	       File->At[0] == '/') {
 	       
-		if (File->At[0] == L'/') {
-			while (File->At[0] != L'\n' &&
-			       File->At[0] != L'\0') {
+		if (File->At[0] == '/') {
+			while (File->At[0] != '\n' &&
+			       File->At[0] != '\0') {
 				IncrementFilePosition(File, 1);
 			}
-			if (File->At[0] == L'\n') {
+			if (File->At[0] == '\n') {
 				IncrementFilePosition(File, 1);
 			}
 		}
@@ -69,9 +86,9 @@ void AdvancePastWhitespaceAndComments(file_state *File) {
 /* Advances File->At past whitespace on the same line.
  */
 void AdvancePastWhitespaceOnSameLine(file_state *File) {
-	while (File->At[0] == L' '  ||
-	       File->At[0] == L'\r' ||
-	       File->At[0] == L'\t') {
+	while (File->At[0] == ' '  ||
+	       File->At[0] == '\r' ||
+	       File->At[0] == '\t') {
 		IncrementFilePosition(File, 1);
 	}
 }
@@ -84,10 +101,10 @@ int ExtractNumberDecimal(file_state *File, int *Result) {
 	int sign = 1;
 	*Result = 0;
 
-	if (File->At[0] == L'0' && File->At[1] == L'd') {
+	if (File->At[0] == '0' && File->At[1] == 'd') {
 		IncrementFilePosition(File, 2);
 		// @TODO this loop could be writen better...
-		while ((*(File->At) >= L'0' && *(File->At) <= L'9') ||
+		while ((*(File->At) >= '0' && *(File->At) <= '9') ||
 		       (*(File->At) == '-') ||
 		       (*(File->At) == '+')) {
 			Success = TRUE; // we started to eat something that initally looks like a number...
@@ -100,12 +117,12 @@ int ExtractNumberDecimal(file_state *File, int *Result) {
 				sign = +1;
 			}
 
-			else if (*(File->At) >= L'0' && *(File->At) <= L'9') {
+			else if (*(File->At) >= '0' && *(File->At) <= '9') {
 				if (Result != 0) {
 					*Result *= 10;
 				}
 		
-				*Result += *(File->At) - L'0';
+				*Result += *(File->At) - '0';
 			}
 		
 			IncrementFilePosition(File, 1);
@@ -125,12 +142,12 @@ int ExtractNumberHexadecimal(file_state *File, int *Result) {
 	int sign = 1;
 	*Result = 0;
 
-	if (File->At[0] == L'0' && File->At[1] == L'x') {
+	if (File->At[0] == '0' && File->At[1] == 'x') {
 		IncrementFilePosition(File, 2);
 		// @TODO this loop could be writen better...
-		while ((File->At[0] >= L'0' && File->At[0] <= L'9') ||
-		       (File->At[0] >= L'A' && File->At[0] <= L'F') ||
-		       (File->At[0] >= L'a' && File->At[0] <= L'f')
+		while ((File->At[0] >= '0' && File->At[0] <= '9') ||
+		       (File->At[0] >= 'A' && File->At[0] <= 'F') ||
+		       (File->At[0] >= 'a' && File->At[0] <= 'f')
 		       ) {
 			Success = TRUE; // we started to eat something that initally looks like a number...
 
@@ -140,14 +157,14 @@ int ExtractNumberHexadecimal(file_state *File, int *Result) {
 
 			int Value = -1;
 		
-			if (File->At[0] >= L'0' && File->At[0] <= L'9') {
-				Value = File->At[0] - L'0';
+			if (File->At[0] >= '0' && File->At[0] <= '9') {
+				Value = File->At[0] - '0';
 			}
-			else if (File->At[0] >= L'A' && File->At[0] <= L'F') {
-				Value = File->At[0] - L'A' + 0xA;
+			else if (File->At[0] >= 'A' && File->At[0] <= 'F') {
+				Value = File->At[0] - 'A' + 0xA;
 			}
-			else if (File->At[0] >= L'a' && File->At[0] <= L'f') {
-				Value = File->At[0] - L'a' + 0xA;
+			else if (File->At[0] >= 'a' && File->At[0] <= 'f') {
+				Value = File->At[0] - 'a' + 0xA;
 			}
 
 			*Result += Value;
@@ -162,19 +179,22 @@ int ExtractNumberHexadecimal(file_state *File, int *Result) {
 /* If File->At points to a charcter that can be the beginning of a identifier, then this function returns True, File->At is advnaced past the identifier, and the length of the identifier is returned though Length. 
  * If File->At does not point to a character that can begin an identifier, then 
  */
-int ExtractIdentifier(file_state *File, int *Length) {
+int ExtractIdentifier(file_state *File, int *CharCount, int *ByteCount) {
 	int Success = FALSE;
-	if (!(File->At[0] >= L'0' && File->At[0] <= L'9')) {
+	*CharCount = 0;
+	*ByteCount = 0;
+	
+	if (!(File->At[0] >= '0' && File->At[0] <= '9')) {
 		Success = TRUE;
-		(*Length)++;
-		IncrementFilePosition(File, 1);
-		while ((File->At[0] != L' ') &&
-		       (File->At[0] != L'\n') &&
-		       (File->At[0] != L'\r') &&
-		       (File->At[0] != L'\t') &&
-		       (File->At[0] != L'\0')) {
-			(*Length)++;
-			IncrementFilePosition(File, 1);
+		(*CharCount)++;
+		*ByteCount += IncrementFilePosition(File, 1);
+		while ((File->At[0] != ' ') &&
+		       (File->At[0] != '\n') &&
+		       (File->At[0] != '\r') &&
+		       (File->At[0] != '\t') &&
+		       (File->At[0] != '\0')) {
+			(*CharCount)++;
+			*ByteCount += IncrementFilePosition(File, 1);
 		}
 	}
 	return Success;
@@ -186,14 +206,14 @@ int ExtractIdentifier(file_state *File, int *Length) {
 int PeekKeyword(file_state *File, int *Length) {
 	int Success = FALSE;
 	*Length = 0;
-	if ((File->At[*Length] >= L'a' && File->At[*Length] <= L'z') ||
-	    (File->At[*Length] >= L'A' && File->At[*Length] <= L'Z') ||
-	    (File->At[*Length] == L'.')) {
+	if ((File->At[*Length] >= 'a' && File->At[*Length] <= 'z') ||
+	    (File->At[*Length] >= 'A' && File->At[*Length] <= 'Z') ||
+	    (File->At[*Length] == '.')) {
 		Success = TRUE;
 		(*Length)++;
-		while ((File->At[*Length] >= L'a' && File->At[*Length] <= L'z') ||
-		       (File->At[*Length] >= L'A' && File->At[*Length] <= L'Z') ||
-		       (File->At[*Length] == L'.')){
+		while ((File->At[*Length] >= 'a' && File->At[*Length] <= 'z') ||
+		       (File->At[*Length] >= 'A' && File->At[*Length] <= 'Z') ||
+		       (File->At[*Length] == '.')){
 			(*Length)++;
 		}
 	}
@@ -201,17 +221,17 @@ int PeekKeyword(file_state *File, int *Length) {
 }
 
 // Assumess that null charcters terminate a string.
-int CompareStr(wchar_t *A, wchar_t *B, uint64_t Len) {
+int CompareStr(char *A, char *B, uint64_t Len) {
 	int Result = FALSE;
 	uint64_t Index = 0;
 	while (Index < Len && (Result = (A[Index] == B[Index])) != 0) {
 		Index++;
-		if (A[Index] == L'\0' || B[Index] == L'\0') { break; }
+		if (A[Index] == '\0' || B[Index] == '\0') { break; }
 	}
 	return Result;
 }
 
-inline int CompareStrToKeyword(wchar_t *Str, int FileKeywordLength, const keyword_entry Keyword) {
+inline int CompareStrToKeyword(char *Str, int FileKeywordLength, const keyword_entry Keyword) {
 	if (FileKeywordLength != Keyword.Length) {
 		return FALSE;
 	}
@@ -222,21 +242,21 @@ inline int CompareStrToKeyword(wchar_t *Str, int FileKeywordLength, const keywor
 
 /* If ConditionOfFailure is true, then DidErrorOccur is set to true, and vwprintf_s is called with the format string and the VarArg list passed to this function.
  */
-void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const wchar_t *FormatString, ...) {
+void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const char *FormatString, ...) {
 	if (ConditionOfFailure) {
 		if (DidErrorOccur) {
 			*DidErrorOccur = TRUE;
 		}
 		va_list VarArgsList;
-		va_start(VarArgsList,FormatString);
-		vwprintf(FormatString, VarArgsList);
+		va_start(VarArgsList, FormatString);
+		vprintf(FormatString, VarArgsList);
 		va_end(VarArgsList);
 	}
 }
 
 inline int WriteProgramData(file_state *File, uint16_t Data, int CurrentAddress, uint8_t ProgramMetaDataFlags) {
 	int Success = FALSE;
-	ReportErrorConditionally(ProgramMetaData[CurrentAddress] & PMD_IsOccupied, &Success, L"[Error L:%d C:%d] An instruction overlapped another instruction! Pay mind to your usage of .SetAddr\n", File->Line, File->Column);
+	ReportErrorConditionally(ProgramMetaData[CurrentAddress] & PMD_IsOccupied, &Success, "[Error L:%d C:%d] An instruction overlapped another instruction! Pay mind to your usage of .SetAddr\n", File->Line, File->Column);
 	Program[CurrentAddress] = Data;
 	ProgramMetaData[CurrentAddress] |= ProgramMetaDataFlags;
 	
@@ -256,13 +276,13 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			CurrentAddress++;
 			ToIncrementAddress = FALSE;
 		}
-		if (File->At[0] == L'\0') { break; } // we reached the end of the file, no more parsing to be done.
-		ReportErrorConditionally(CurrentAddress < 0 || CurrentAddress > 0xfff, &DidErrorOccur, L"[Error] The CurrentAddress (%X) is less than 0 or greater than 0xfff. This was likely caused by a .SetAddress that was too high, or if there are more than 4095 instructions in this program. This program was at Line %d, Column %d when this error was caught.\nTerminateing Assembly...", CurrentAddress, File->Line, File->Column);
+		if (File->At[0] == '\0') { break; } // we reached the end of the file, no more parsing to be done.
+		ReportErrorConditionally(CurrentAddress < 0 || CurrentAddress > 0xfff, &DidErrorOccur, "[Error] The CurrentAddress (%X) is less than 0 or greater than 0xfff. This was likely caused by a .SetAddress that was too high, or if there are more than 4095 instructions in this program. This program was at Line %d, Column %d when this error was caught.\nTerminateing Assembly...", CurrentAddress, File->Line, File->Column);
 		if (DidErrorOccur) { break; }
 
 		int KeywordIndex = 0;
 		int KeywordLength = 0;
-		ReportErrorConditionally(PeekKeyword(File, &KeywordLength) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to find a keyword\n");
+		ReportErrorConditionally(PeekKeyword(File, &KeywordLength) == FALSE, &DidErrorOccur, "[Error L:%d C:%d] Failed to find a keyword\n");
 		for (; KeywordIndex < KW_COUNT; KeywordIndex++) {
 			if (CompareStrToKeyword(File->At, KeywordLength, Keywords[KeywordIndex])) {
 				break;
@@ -293,19 +313,19 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			int Address = 0;
 			identifier_dest IdentifierDest = {.Start = File->At, .Address = CurrentAddress, .Line = File->Line, .Column = File->Column};
 			if (ExtractNumberHexadecimal(File, &Address)) {
-				ReportErrorConditionally(Address > 0xFFF || Address < 0, &DidErrorOccur, L"[Error L:%d C:%d] The Address provided (0x%X) was not between 0x0 and 0xFFF.\n", File->Line, File->Column, Address);
+				ReportErrorConditionally(Address > 0xFFF || Address < 0, &DidErrorOccur, "[Error L:%d C:%d] The Address provided (0x%X) was not between 0x0 and 0xFFF.\n", File->Line, File->Column, Address);
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode | Address, CurrentAddress, PMD_IsOccupied);
 			}
-			else if (ExtractIdentifier(File, &IdentifierDest.Length)) {
+			else if (ExtractIdentifier(File, &IdentifierDest.CharCount, &IdentifierDest.ByteCount)) {
 				AddToPagedList(IdentifierDestinationList, &IdentifierDest);
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode, CurrentAddress, PMD_IsOccupied | PMD_UsedIdentifier);
 			}
 			else {
-				ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to read an argument for %s operation. Please provide a Hex Address or a Identifier.\n", File->Line, File->Column, Keywords[KeywordIndex].String);
+				ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] Failed to read an argument for %s operation. Please provide a Hex Address or a Identifier.\n", File->Line, File->Column, Keywords[KeywordIndex].String);
 			}
 
 			if (KeywordIndex == KW_Jumpstore) {
-				ReportErrorConditionally(Address == 0xFFF, 0, L"[Warning L:%d C:%d] A jns instruction was provided 0xfff as a destination address. Make sure you know what you Marie Processor does when the Program Counter is > 0xFFF!\n", File->Line, File->Column);
+				ReportErrorConditionally(Address == 0xFFF, 0, "[Warning L:%d C:%d] A jns instruction was provided 0xfff as a destination address. Make sure you know what you Marie Processor does when the Program Counter is > 0xFFF!\n", File->Line, File->Column);
 			}
 		} break;
 			
@@ -332,25 +352,25 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			LastLineOperationWasProcessed = File->Line;
 			
 			int RawOperation = 0;
-			if (CompareStr(File->At, L"lesser", 6)) {
+			if (CompareStr(File->At, "lesser", 6)) {
 				IncrementFilePosition(File, 6);
 				RawOperation = 0x000;
 			}
-			else if (CompareStr(File->At, L"equal", 5)) {
+			else if (CompareStr(File->At, "equal", 5)) {
 				IncrementFilePosition(File, 5);
 				RawOperation = 0x400;
 			}
-			else if (CompareStr(File->At, L"greater", 7)) {
+			else if (CompareStr(File->At, "greater", 7)) {
 				IncrementFilePosition(File, 7);
 				RawOperation = 0xC00;
 			}
 			else if (ExtractNumberHexadecimal(File, &RawOperation)) {
 			}
 			else {
-				ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to read an argument for Skipcond operation. Please provide either a named operation (\"lesser\", \"equal\", or \"greater\") or the raw operation value (0x000, 0x400, 0xC000 respectively).\n", File->Line, File->Column);
+				ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] Failed to read an argument for Skipcond operation. Please provide either a named operation (\"lesser\", \"equal\", or \"greater\") or the raw operation value (0x000, 0x400, 0xC000 respectively).\n", File->Line, File->Column);
 			}
 			const int DidFail = RawOperation != 0x000 && RawOperation != 0x400 && RawOperation != 0xC00;
-			ReportErrorConditionally(DidFail, 0, L"[Warning L:%d C:%d] The Operation provided (0x%0.3X) was not a known operation. We will continue to assemble this program but know that this skipcond instruction may have unintended behaivor!\nKnown operation constants are lesser (0x000), equal (0x400), or greater (0xC00)\n", File->Line, File->Column, RawOperation);
+			ReportErrorConditionally(DidFail, 0, "[Warning L:%d C:%d] The Operation provided (0x%0.3X) was not a known operation. We will continue to assemble this program but know that this skipcond instruction may have unintended behaivor!\nKnown operation constants are lesser (0x000), equal (0x400), or greater (0xC00)\n", File->Line, File->Column, RawOperation);
 			WriteProgramData(File, Keywords[KeywordIndex].Opcode | RawOperation, CurrentAddress, PMD_IsOccupied);
 		} break;
 
@@ -360,9 +380,9 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			IncrementFilePosition(File, Keywords[KW_M_SetAddr].Length);
 			AdvancePastWhitespaceOnSameLine(File);
 			
-			ReportErrorConditionally(ExtractNumberHexadecimal(File, &CurrentAddress) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Unable to Extract a Hexadecimal Number for .SetAddr", File->Line, File->Column);
+			ReportErrorConditionally(ExtractNumberHexadecimal(File, &CurrentAddress) == FALSE, &DidErrorOccur, "[Error L:%d C:%d] Unable to Extract a Hexadecimal Number for .SetAddr", File->Line, File->Column);
 
-			ReportErrorConditionally(CurrentAddress > 0xFFF || CurrentAddress < 0, &DidErrorOccur, L"[Error L:%d C:%d] The Address provided (%x) was not between 0x0 and 0xfff.\n", File->Line, File->Column, CurrentAddress);
+			ReportErrorConditionally(CurrentAddress > 0xFFF || CurrentAddress < 0, &DidErrorOccur, "[Error L:%d C:%d] The Address provided (%x) was not between 0x0 and 0xfff.\n", File->Line, File->Column, CurrentAddress);
 		} break;
 
 		case(KW_M_Ident): {
@@ -373,16 +393,16 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			
 			identifier_source Data = {.Start = File->At, .Value = CurrentAddress - 1, .Line = File->Line, .Column = File->Column};
 
-			ReportErrorConditionally(LastLineOperationWasProcessed != File->Line, &DidErrorOccur, L"[Error L:%d C:%d] Identifiers must follow right after a operation on the same line.\nEx: data 0d0 .Ident Foo\nIf you don't like it, change it!\n", File->Line, File->Column); 
-			ReportErrorConditionally(ExtractIdentifier(File, &Data.Length) == FALSE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to find an Identifier Name after .Ident!\n", File->Line, File->Column);
+			ReportErrorConditionally(LastLineOperationWasProcessed != File->Line, &DidErrorOccur, "[Error L:%d C:%d] Identifiers must follow right after a operation on the same line.\nEx: data 0d0 .Ident Foo\nIf you don't like it, change it!\n", File->Line, File->Column); 
+			ReportErrorConditionally(ExtractIdentifier(File, &Data.CharCount, &Data.ByteCount) == FALSE, &DidErrorOccur, "[Error L:%d C:%d] Failed to find an Identifier Name after .Ident!\n", File->Line, File->Column);
 
 			for (int Index = 0; ; Index++) {
 				const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
 				if (IdentifierSource == 0) { break; }
 		
-				if (Data.Length == IdentifierSource->Length &&
-				    CompareStr(Data.Start, IdentifierSource->Start, Data.Length)) {
-					ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Identifier \"%.*s\" was redefined!", Data.Length, Data.Start);
+				if (Data.ByteCount == IdentifierSource->ByteCount &&
+				    CompareStr(Data.Start, IdentifierSource->Start, Data.ByteCount)) {
+					ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] Identifier \"%.*s\" was redefined!", Data.ByteCount, Data.Start);
 				}
 			}
 			
@@ -406,14 +426,14 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			else if (ExtractNumberHexadecimal(File, &Value)) {
 			}
 			else {
-				ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] Failed to read an argument for the Data directive. Please provide a number constant within 0 - 65535 (0x0 - 0xffff).\n", File->Line, File->Column);
+				ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] Failed to read an argument for the Data directive. Please provide a number constant within 0 - 65535 (0x0 - 0xffff).\n", File->Line, File->Column);
 			}
-			ReportErrorConditionally(Value < 0 || Value > 0xffff, &DidErrorOccur, L"[Error L:%d C:%d] Invalid argument for the Data directive. Please provide a number constant within 0 - 65535 (0x0 - 0xffff).\n", File->Line, File->Column);
+			ReportErrorConditionally(Value < 0 || Value > 0xffff, &DidErrorOccur, "[Error L:%d C:%d] Invalid argument for the Data directive. Please provide a number constant within 0 - 65535 (0x0 - 0xffff).\n", File->Line, File->Column);
 			DidErrorOccur = WriteProgramData(File, Value, CurrentAddress, PMD_IsOccupied | PMD_IsData);
 		} break;
 
 		default: {
-			ReportErrorConditionally(TRUE, &DidErrorOccur, L"[Error L:%d C:%d] \"%.*s\" is not a valid keyword.\n", File->Line, File->Column, KeywordLength, File->At);
+			ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] \"%.*s\" is not a valid keyword.\n", File->Line, File->Column, KeywordLength, File->At);
 		}
 			
 		}		         
@@ -431,8 +451,8 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 				const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, SourceIndex);
 				if (IdentifierSource == 0) { break; }
 				
-				if (IdentifierDest->Length == IdentifierSource->Length) {
-					if (CompareStr(IdentifierDest->Start, IdentifierSource->Start, IdentifierDest->Length)) {
+				if (IdentifierDest->ByteCount == IdentifierSource->ByteCount) {
+					if (CompareStr(IdentifierDest->Start, IdentifierSource->Start, IdentifierDest->ByteCount)) {
 						Assert(IdentifierSource->Value <= 0xfff); // I'm pretty sure this should never be possible.
 						Program[IdentifierDest->Address] |= IdentifierSource->Value;
 						DidErrorOccur = FALSE;
@@ -441,8 +461,7 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 				}
 			}
 			if (DidErrorOccur) {
-				// @TODO we this should output a line and a column
-				wprintf(L"[Error L:%d C:%d] Identifier \"%.*s\" was never defined!\n", IdentifierDest->Line, IdentifierDest->Column, IdentifierDest->Length, IdentifierDest->Start);
+				printf("[Error L:%d C:%d] Identifier \"%.*s\" was never defined!\n", IdentifierDest->Line, IdentifierDest->Column, IdentifierDest->ByteCount, IdentifierDest->Start);
 				break;
 			}
 		}
@@ -466,26 +485,11 @@ int fprintfCheck(int *Success, FILE *File, char *FormatStr, ...) {
 	return Result;
 }
 
-int fwprintfCheck(int *Success, FILE *File, wchar_t *FormatStr, ...) {
+int snprintfCheck(int *Success, char *Buffer, size_t Size, char *FormatStr, ...) {
 	va_list ArgList;
 	va_start(ArgList, FormatStr);
 
-	int Result = vfwprintf(File, FormatStr, ArgList);
-	if (Result < 0) { *Success = FALSE; }
-	
-	va_end(ArgList);
-
-	if (!Success) {
-		return Result = 0;
-	}
-	return Result;
-}
-
-int swprintfCheck(int *Success, wchar_t *Buffer, size_t Size, wchar_t *FormatStr, ...) {
-	va_list ArgList;
-	va_start(ArgList, FormatStr);
-
-	int Result = vswprintf(Buffer, Size, FormatStr, ArgList);
+	int Result = vsnprintf(Buffer, Size, FormatStr, ArgList);
 	if (Result < 0) { *Success = FALSE; }
 	
 	va_end(ArgList);
@@ -542,37 +546,38 @@ int OutputRawHex(FILE *FileStream) {
 }
 
 int OutputSymbolTable(FILE *FileStream, paged_list *IdentifierDestinationList, paged_list *IdentifierSourceList) {
-	int IdentifierMaxLength = 0;
+	int IdentifierMaxCharLength = 0;
 	int Success = TRUE;
 
 	for (int Index = 0; ; Index++) {
 		const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
 		if (IdentifierSource == 0) { break; }
 		
-		if (IdentifierSource->Length > IdentifierMaxLength) {
-			IdentifierMaxLength = IdentifierSource->Length;
+		if (IdentifierSource->CharCount > IdentifierMaxCharLength) {
+			IdentifierMaxCharLength = IdentifierSource->CharCount;
 		}
 	}
 
-	IdentifierMaxLength = Max(IdentifierMaxLength, 10);
+	IdentifierMaxCharLength = Max(IdentifierMaxCharLength, 10);
 
-	fwprintfCheck(&Success, FileStream, L"| %- *s | Identifier's Value | Addresses that use Identifier\n", IdentifierMaxLength, L"Identifier");
+	fprintfCheck(&Success, FileStream, "| %- *s | Identifier's Value | Addresses that use Identifier\n", IdentifierMaxCharLength, "Identifier");
 	for (int SourceIndex = 0; Success; SourceIndex++) {
 		const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, SourceIndex);
 		if (IdentifierSource == 0) { break; }
-		
-		fwprintfCheck(&Success, FileStream, L"| %- *.*s | 0x%-0*.3X | ", IdentifierMaxLength, IdentifierSource->Length, IdentifierSource->Start, 18 - 2, IdentifierSource->Value);
+
+		int AdditionalPadding = (IdentifierSource->ByteCount - IdentifierSource->CharCount); // Extra padding based on the difference of the charcter count and byte count. This is because the printf family of functions calulated padding based on bytes writen.
+		fprintfCheck(&Success, FileStream, "| %- *.*s | 0x%-0*.3X | ", IdentifierMaxCharLength + AdditionalPadding, IdentifierSource->ByteCount, IdentifierSource->Start, 18 - 2, IdentifierSource->Value);
 		
 		for (int DestIndex = 0; Success; DestIndex++) {
 			const identifier_dest *IdentifierDest = GetFromPagedList(IdentifierDestinationList, DestIndex);
 			if (IdentifierDest == 0) { break; }
 			
-			if ((IdentifierSource->Length == IdentifierDest->Length) &&
-			    CompareStr(IdentifierSource->Start, IdentifierDest->Start, IdentifierSource->Length)) {
-				fwprintfCheck(&Success, FileStream, L" 0x%-0.3X", IdentifierDest->Address);
+			if ((IdentifierSource->ByteCount == IdentifierDest->ByteCount) &&
+			    CompareStr(IdentifierSource->Start, IdentifierDest->Start, IdentifierSource->ByteCount)) {
+				fprintfCheck(&Success, FileStream, " 0x%-0.3X", IdentifierDest->Address);
 			}
 		}
-		fwprintfCheck(&Success, FileStream, L"\n");
+		fprintfCheck(&Success, FileStream, "\n");
 	}
 	fclose(FileStream);
 
@@ -588,28 +593,29 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 	int InMemoryGap = FALSE;
 
 	// @TODO make this growable!!! Someone someday will be really mad at me for limiting the size of this string.
-	wchar_t *ContentsOfAC = calloc(5000, sizeof(wchar_t));
+	char *ContentsOfAC = calloc(5000, sizeof(wchar_t));
 	int ContentsOfACSize = 5000;
-	ContentsOfAC[0] = L'0';
-	ContentsOfAC[1] = L'\0';
+	ContentsOfAC[0] = '0';
+	ContentsOfAC[1] = '\0';
 	int EmitCode = EMIT_No;
 	int EmitIndentNextLine = FALSE;
 
-	int OperandMaxLength = wcslen(L"greater"); // "greater" is the longest literal operand, as a argument to skipcond.
+	int OperandMaxLength = strlen("greater"); // "greater" is the longest literal operand, as a argument to skipcond.
 	for (int Index = 0; ; Index++) {
 		const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
 		if (IdentifierSource == 0) { break; }
 		
-		if (IdentifierSource->Length > OperandMaxLength) {
-			OperandMaxLength = IdentifierSource->Length;
+		if (IdentifierSource->CharCount > OperandMaxLength) {
+			OperandMaxLength = IdentifierSource->CharCount;
 		}
 	}
 
 	//  + 1 + is repersentive of spaces.
 	// Max length is "skipcond LongstIdentifier .Ident LongestIdentifier"
-	int ListingMaxLength = Keywords[KW_Skipcond].Length + 1 + OperandMaxLength + 1 + Keywords[KW_M_Ident].Length + 1 + OperandMaxLength + 1;
+	// @TODO I think the max length of a listing is actually slightly shorter than this.
+	int ListingMaxLength = Keywords[KW_Skipcond].Length + 1 + OperandMaxLength + 1 + Keywords[KW_M_Ident].Length + 1 + OperandMaxLength;
 	
-	fwprintfCheck(&Success, FileStream, L"| Address | Opcode | %- *s | High Level Code\n", ListingMaxLength, L"Listing");
+	fprintfCheck(&Success, FileStream, "| Address | Opcode | %- *s | High Level Code\n", ListingMaxLength, "Listing");
 	
 	for (int Index = 0; Index < Kilobyte(4) && Success; Index++) {
 		int ListingCharacterCount = 0;
@@ -617,10 +623,10 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 			if (InMemoryGap) {
 				InMemoryGap = FALSE;
 				Assert(ListingMaxLength >= 14);
-				fwprintfCheck(&Success, FileStream, L"|         |        | .SetAddr 0x%0.3X% *s |\n", Index, ListingMaxLength - 14, L"");
+				fprintfCheck(&Success, FileStream, "|         |        | .SetAddr 0x%0.3X% *s |\n", Index, ListingMaxLength - 14, "");
 			}
 
-			fwprintfCheck(&Success, FileStream, L"| 0x%0.3X   | 0x%0.4X | ", Index, Program[Index]);
+			fprintfCheck(&Success, FileStream, "| 0x%0.3X   | 0x%0.4X | ", Index, Program[Index]);
 
 			identifier_dest *IdentifierDestination = 0;
 			if (ProgramMetaData[Index] & PMD_UsedIdentifier) {
@@ -628,7 +634,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					IdentifierDestination = GetFromPagedList(IdentifierDestinationList, IdentifierIndex);
 							
 					if (IdentifierDestination == 0) {
-						wprintf(L"[Error Lising] Failed to resolve an Identifier used at  0x%0.3X\n", Index);
+						printf("[Error Lising] Failed to resolve an Identifier used at  0x%0.3X\n", Index);
 						break;
 					}
 					if (IdentifierDestination->Address == Index) {
@@ -639,10 +645,10 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 
 
 			if (ProgramMetaData[Index] & PMD_IsData) {
-				ListingCharacterCount += fwprintfCheck(&Success, FileStream, L"data 0x%0.4X", Program[Index]);
+				ListingCharacterCount += fprintfCheck(&Success, FileStream, "data 0x%0.4X", Program[Index]);
 			}
 			else {
-				wchar_t *OpcodeMemonic = 0;
+				char *OpcodeMemonic = 0;
 				const uint16_t Opcode = Program[Index] & 0xF000;
 				if (Opcode == Keywords[KW_Jumpstore].Opcode) {
 					OpcodeMemonic = Keywords[KW_Jumpstore].String;
@@ -652,10 +658,10 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					OpcodeMemonic = Keywords[KW_Load].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%.*s", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 					}
 					else {
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]/", Program[Index] & 0x0FFF);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Store].Opcode) {
@@ -665,47 +671,47 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				else if (Opcode == Keywords[KW_Add].Opcode) {
 					OpcodeMemonic = Keywords[KW_Add].String;
 					EmitCode = EMIT_No;
-					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
+					if (ContentsOfAC[0] == '0' && ContentsOfAC[1] == '\0') {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%.*s", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3X]", Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s + %.*s", ContentsOfAC, IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s + RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
 				else if (Opcode == Keywords[KW_Sub].Opcode) {
 					OpcodeMemonic = Keywords[KW_Sub].String;
 					EmitCode = EMIT_No;
-					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
+					if (ContentsOfAC[0] == '0' && ContentsOfAC[1] == '\0') {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"-%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "-%.*s", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"-RAM[0x%0.3X]", Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "-RAM[0x%0.3X]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s - %.*s", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s - %.*s", ContentsOfAC, IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s - RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s - RAM[0x%0.3X]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
 				else if (Opcode == Keywords[KW_Input].Opcode) {
 					OpcodeMemonic = Keywords[KW_Input].String;
 					EmitCode = EMIT_No;
-					swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"Input");
+					snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "Input");
 				}
 				else if (Opcode == Keywords[KW_Output].Opcode) {
 					OpcodeMemonic = Keywords[KW_Output].String;
@@ -726,7 +732,7 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				else if (Opcode == Keywords[KW_Clear].Opcode) {
 					OpcodeMemonic = Keywords[KW_Clear].String;
 					EmitCode = EMIT_Clear;
-					swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"0");
+					snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "0");
 				}
 				else if (Opcode == Keywords[KW_Jumpi].Opcode) {
 					OpcodeMemonic = Keywords[KW_Jumpi].String;
@@ -735,20 +741,20 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				else if (Opcode == Keywords[KW_Addi].Opcode) {
 					OpcodeMemonic = Keywords[KW_Addi].String;
 					EmitCode = EMIT_No;
-					if (ContentsOfAC[0] == L'0' && ContentsOfAC[1] == L'\0') {
+					if (ContentsOfAC[0] == '0' && ContentsOfAC[1] == '\0') {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[%.*s]", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 						}
 					}
 					else {
 						if (IdentifierDestination) {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[%.*s]", ContentsOfAC, IdentifierDestination->Length, IdentifierDestination->Start);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s + RAM[%.*s]", ContentsOfAC, IdentifierDestination->ByteCount, IdentifierDestination->Start);
 						}
 						else {
-							swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
+							snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%s + RAM[RAM[0x%0.3X]]", ContentsOfAC, Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -756,17 +762,18 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					OpcodeMemonic = Keywords[KW_Loadi].String;
 					EmitCode = EMIT_No;
 					if (IdentifierDestination) {
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[%.*s]", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 					}
 					else {
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[RAM[0x%0.3X]]", Program[Index] & 0x0FFF);
 					}
 				}
 				else if (Opcode == Keywords[KW_Storei].Opcode) {
 					OpcodeMemonic = Keywords[KW_Storei].String;
 					EmitCode = EMIT_Storei;
 				}
-				ListingCharacterCount += fwprintfCheck(&Success, FileStream, L"%s", OpcodeMemonic);
+				
+				ListingCharacterCount += fprintfCheck(&Success, FileStream, "%s", OpcodeMemonic);
 
 				if (OpcodeMemonic != Keywords[KW_Halt].String &&
 				    OpcodeMemonic != Keywords[KW_Input].String &&
@@ -774,19 +781,20 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				    OpcodeMemonic != Keywords[KW_Clear].String) {
 					if (ProgramMetaData[Index] & PMD_UsedIdentifier) {
 						Assert(IdentifierDestination != FALSE);
-						ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" %.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						ListingCharacterCount += fprintfCheck(&Success, FileStream, " %.*s", IdentifierDestination->ByteCount, IdentifierDestination->Start);
+						ListingCharacterCount -= IdentifierDestination->ByteCount - IdentifierDestination->CharCount;
 					}
 					else {
 						if (OpcodeMemonic == Keywords[KW_Skipcond].String) {
 							switch(Program[Index] & 0x0FFF) {
-							case(0x000): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" lesser"); break;
-							case(0x400): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" equal"); break;
-							case(0xC00): ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" greater"); break;
-							default: ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF); break;
+							case(0x000): ListingCharacterCount += fprintfCheck(&Success, FileStream, " lesser"); break;
+							case(0x400): ListingCharacterCount += fprintfCheck(&Success, FileStream, " equal"); break;
+							case(0xC00): ListingCharacterCount += fprintfCheck(&Success, FileStream, " greater"); break;
+							default: ListingCharacterCount += fprintfCheck(&Success, FileStream, " 0x%0.3X", Program[Index] & 0x0FFF); break;
 							}
 						}
 						else {
-							ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" 0x%0.3X", Program[Index] & 0x0FFF);
+							ListingCharacterCount += fprintfCheck(&Success, FileStream, " 0x%0.3X", Program[Index] & 0x0FFF);
 						}
 					}
 				}
@@ -796,23 +804,24 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 				for (int IdentifierIndex = 0; ; IdentifierIndex++) {
 					const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, IdentifierIndex);
 					if (IdentifierSource == 0) {
-						fwprintfCheck(&Success, FileStream, L" .Ident COULD NOT RESOLVE IDENTIFER DEFINITION");
-						wprintf(L"[Error Lising] Failed to resolve an Identifier defined at address 0x%0.3X\n", Index);
+						fprintfCheck(&Success, FileStream, " .Ident COULD NOT RESOLVE IDENTIFER DEFINITION");
+						printf("[Error Lising] Failed to resolve an Identifier defined at address 0x%0.3X\n", Index);
 						Success = FALSE;
 						break;
 					}
 					if (IdentifierSource->Value == Index) {
-						ListingCharacterCount += fwprintfCheck(&Success, FileStream, L" .Ident %.*s", IdentifierSource->Length, IdentifierSource->Start);
+						ListingCharacterCount += fprintfCheck(&Success, FileStream, " .Ident %.*s", IdentifierSource->ByteCount, IdentifierSource->Start);
+						ListingCharacterCount -= IdentifierSource->ByteCount - IdentifierSource->CharCount;
 						break;
 					}
 				}
 			}
 			
-			fwprintfCheck(&Success, FileStream, L"% *s | ", ListingMaxLength - ListingCharacterCount, L"");
+			fprintfCheck(&Success, FileStream, "% *s | ", ListingMaxLength - ListingCharacterCount, "");
 
 			if (EmitIndentNextLine) {
 				EmitIndentNextLine = FALSE;
-				fwprintfCheck(&Success, FileStream, L"    ");
+				fprintfCheck(&Success, FileStream, "    ");
 			}
 			
 			{
@@ -823,93 +832,93 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 					
 				case(EMIT_Jump): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"Goto %.*s // 0x%0.3X", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "Goto %.*s // 0x%0.3X", IdentifierDestination->ByteCount, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintfCheck(&Success, FileStream, L"Goto 0x%0.3X", Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "Goto 0x%0.3X", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpi): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"Goto RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
+						fprintfCheck(&Success, FileStream, "Goto RAM[%.*s]", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 					}
 					else {
-						fwprintfCheck(&Success, FileStream, L"Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "Goto RAM[0x%0.3X]", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Jumpstore): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"%.*s = PC\n", IdentifierDestination->Length, IdentifierDestination->Start);
-						fwprintfCheck(&Success, FileStream, L"|         |        | %- *s | % *sGoto (%.*s + 0x1) // (0x%0.3X + 0x1)", ListingMaxLength, L"", EmitIndentNextLine ? 0 : 4, L"", IdentifierDestination->Length, IdentifierDestination->Start, Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "%.*s = PC\n", IdentifierDestination->ByteCount, IdentifierDestination->Start);
+						fprintfCheck(&Success, FileStream, "|         |        | %- *s | % *sGoto (%.*s + 0x1) // (0x%0.3X + 0x1)", ListingMaxLength, "", EmitIndentNextLine ? 0 : 4, "", IdentifierDestination->ByteCount, IdentifierDestination->Start, Program[Index] & 0xFFF);
 					}
 					else {
-						fwprintfCheck(&Success, FileStream, L"0x%0.3X = PC\n", Program [Index] & 0x0FFF);
-						fwprintfCheck(&Success, FileStream, L"|         |        | %- *s | Goto (0x%0.3X + 0x1)", ListingMaxLength, L"", Program[Index] & 0x0FFF);
+						fprintfCheck(&Success, FileStream, "0x%0.3X = PC\n", Program [Index] & 0x0FFF);
+						fprintfCheck(&Success, FileStream, "|         |        | %- *s | Goto (0x%0.3X + 0x1)", ListingMaxLength, "", Program[Index] & 0x0FFF);
 					}
 				} break;
 
 				case(EMIT_Skipcond): {
 					if ((Program[Index] & 0x0FFF) == 0xC00) { // Greater
-						fwprintfCheck(&Success, FileStream, L"if ((%s) <= 0)", ContentsOfAC);
+						fprintfCheck(&Success, FileStream, "if ((%s) <= 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x400) { // Equal
-						fwprintfCheck(&Success, FileStream, L"if ((%s) != 0)", ContentsOfAC);
+						fprintfCheck(&Success, FileStream, "if ((%s) != 0)", ContentsOfAC);
 					}
 					else if ((Program[Index] & 0x0FFF) == 0x000) { // Lesser
-						fwprintfCheck(&Success, FileStream, L"if ((%s) >= 0)", ContentsOfAC);
+						fprintfCheck(&Success, FileStream, "if ((%s) >= 0)", ContentsOfAC);
 					}
 					else { // Unknown
-						fwprintfCheck(&Success, FileStream, L"Skip next if (unknown operation)");
+						fprintfCheck(&Success, FileStream, "Skip next if (unknown operation)");
 					}
 					EmitIndentNextLine = TRUE;
 				} break;
 
 				case(EMIT_Store): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"%.*s = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"%.*s", IdentifierDestination->Length, IdentifierDestination->Start);
+						fprintfCheck(&Success, FileStream, "%.*s = %s", IdentifierDestination->ByteCount, IdentifierDestination->Start, ContentsOfAC);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "%.*s", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 					}
 					else {
-						fwprintfCheck(&Success, FileStream, L"RAM[0x%0.3x] = %s", Program[Index] & 0xFFF, ContentsOfAC);
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[0x%0.3x]", Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "RAM[0x%0.3x] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[0x%0.3x]", Program[Index] & 0xFFF);
 					}
 				} break;
 
 				case(EMIT_Storei): {
 					if (IdentifierDestination) {
-						fwprintfCheck(&Success, FileStream, L"RAM[%.*s] = %s", IdentifierDestination->Length, IdentifierDestination->Start, ContentsOfAC);
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[%.*s]", IdentifierDestination->Length, IdentifierDestination->Start);
+						fprintfCheck(&Success, FileStream, "RAM[%.*s] = %s", IdentifierDestination->ByteCount, IdentifierDestination->Start, ContentsOfAC);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[%.*s]", IdentifierDestination->ByteCount, IdentifierDestination->Start);
 					}
 					else {
-						fwprintfCheck(&Success, FileStream, L"RAM[RAM[0x%0.3X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
-						swprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, L"RAM[RAM[0x%0.3X]]", Program[Index] & 0xFFF);
+						fprintfCheck(&Success, FileStream, "RAM[RAM[0x%0.3X]] = %s", Program[Index] & 0xFFF, ContentsOfAC);
+						snprintfCheck(&Success, ContentsOfAC, ContentsOfACSize, "RAM[RAM[0x%0.3X]]", Program[Index] & 0xFFF);
 					}
 					
 				} break;
 
 				case(EMIT_Clear): {
-					fwprintfCheck(&Success, FileStream, L"AC = 0");
+					fprintfCheck(&Success, FileStream, "AC = 0");
 				} break;
 
 				case(EMIT_Output): {
-					fwprintfCheck(&Success, FileStream, L"Output = %s", ContentsOfAC);
+					fprintfCheck(&Success, FileStream, "Output = %s", ContentsOfAC);
 				} break;
 
 				case(EMIT_Halt): {
-					fwprintfCheck(&Success, FileStream, L"End execution");
+					fprintfCheck(&Success, FileStream, "End execution");
 				} break;
 
 				default: {
-					wprintf(L"[Error Listing] We Tried to emit a invalid emit code! Something is wrong with the compiler\n");
+					printf("[Error Listing] We Tried to emit a invalid emit code! Something is wrong with the compiler\n");
 					Success = FALSE;
 				} break;
 				}
 				EmitCode = EMIT_No;	
 			}
 			
-			fwprintfCheck(&Success, FileStream, L"\n");
+			fprintfCheck(&Success, FileStream, "\n");
 		}
 		else {
 			InMemoryGap = TRUE;
@@ -925,8 +934,8 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 	return Success;
 }
 
-wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
-	wchar_t *Result = 0;
+char *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
+	char *Result = 0;
 
 	if (*Success) {
 		uint8_t ByteOrderMark[4];
@@ -938,7 +947,7 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 		    (ByteOrderMark[1] == 0xFE) &&
 		    (ByteOrderMark[2] == 0x00) &&
 		    (ByteOrderMark[3] == 0x00)) { // UTF-32-LE
-			wprintf(L"[Error File Handling] Little Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
+			printf("[Error File Handling] Little Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
 			*Success = FALSE;       
 		}
 		
@@ -947,7 +956,7 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 		         (ByteOrderMark[1] == 0x00) &&
 		         (ByteOrderMark[2] == 0xFE) &&
 		         (ByteOrderMark[3] == 0xFF)) { // UTF-32-BE
-			wprintf(L"[Error File Handling] Big Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
+			printf("[Error File Handling] Big Endian UTF 32 encoding is not supported. Please use UTF 16 or UTF 8.\n");
 			*Success = FALSE;
 		}
 		
@@ -956,14 +965,70 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 		         (ByteOrderMark[1] == 0xFE)) { // UTF-16-LE
 			FileSize -= 2;
 			if (FileSize == 0) {
-				wprintf(L"[Error File Handling] This file contains no textual content!\n");
+				printf("[Error File Handling] This file contains no textual content!\n");
 				*Success = 0;
 			}
 			else {
 				fseek(FileStream, 2, SEEK_SET);
-				Result = malloc(FileSize + sizeof(wchar_t));
-				fread(Result, sizeof(uint8_t), FileSize, FileStream);
-				Result[FileSize/2] = L'\0';
+				Result = malloc(0);
+				int ResultSize = 0;
+				
+				Assert((FileSize%2) == 0);
+				while (FileSize != 0) {
+					uint16_t LowByte = 0, HighByte = 0;
+					uint32_t CodePoint = 0;
+					fread(&HighByte, sizeof(uint16_t), 1, FileStream);
+					FileSize -= 2;
+					if ((HighByte & 0xFC00) == 0xD800) {
+						fread(&LowByte, sizeof(uint16_t), 1, FileStream);
+						FileSize -= 2;
+						if ((LowByte & 0xFC00) != 0xDC00) {
+							printf("[Error File Handling] A high surrogate was not followed by a low surrogate, This file is not valid UTF-16-LE\n");
+							*Success = FALSE;       
+						}
+						CodePoint = 0x10000 + ((HighByte & 0x03FF) << 10) + (LowByte & 0x03FF);
+					}
+					else if ((HighByte & 0xFC00) == 0xDC00) {
+						printf("[Error File Handling] A low surrogate was not followed by a high surrogate, This file is not valid UTF-16-LE\n");
+						*Success = FALSE;
+					}
+					else {
+						CodePoint = HighByte;
+					}
+
+					if ((CodePoint >= 0x0) && (CodePoint <= 0x7F)) { // One Byte
+						ResultSize += 1;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-1] = (uint8_t)CodePoint;
+					}
+					else if ((CodePoint >= 0x80) && (CodePoint <= 0x7FF)) { // Two Byte
+						ResultSize += 2;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-2] = 0xC0 | ((uint8_t)( (CodePoint >> 6) & 0x1F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else if ((CodePoint >= 0x800) && (CodePoint <= 0xFFFF)) { // Three Byte
+						ResultSize += 3;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-3] = 0xE0 | ((uint8_t)( (CodePoint >> (6*2)) & 0xF ));
+						Result[ResultSize-2] = 0x80 | ((uint8_t)( (CodePoint >> (6)) & 0x3F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else if ((CodePoint >= 0x10000) && (CodePoint <= 0x10FFFF)) { // Four Byte
+						ResultSize += 4;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-4] = 0xF0 | ((uint8_t)( (CodePoint >> (6*3)) & 0x7 ));
+						Result[ResultSize-3] = 0x80 | ((uint8_t)( (CodePoint >> (6*2)) & 0x3F ));
+						Result[ResultSize-2] = 0x80 | ((uint8_t)( (CodePoint >> (6*1)) & 0x3F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else {
+						printf("[Error File Handling] A invalid codepoint was encountered!\n");
+					}
+				}
+
+				Result = realloc(Result, ResultSize + 1);
+				Result[ResultSize] = 0;
 			}
 		}
 		
@@ -972,20 +1037,81 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 		         (ByteOrderMark[1] == 0xFF)) { // UTF-16-BE
 			FileSize -= 2;
 			if (FileSize == 0) {
-				wprintf(L"[Error File Handling] This file contains no textual content!\n");
+				printf("[Error File Handling] This file contains no textual content!\n");
 				*Success = 0;
 			}
 			else {
 				fseek(FileStream, 2, SEEK_SET);
-				Result = malloc(FileSize + sizeof(wchar_t));
-				fread(Result, sizeof(uint8_t), FileSize, FileStream);
-				Result[FileSize/2] = L'\0';
-				for (int Index = 0; Index < FileSize; Index += 2) { // swaps points from BE to LE
-					uint8_t *TempPointer = (uint8_t*)&(Result[Index/2]);
-					TempPointer[0] = TempPointer[0] ^ TempPointer[1];
-					TempPointer[1] = TempPointer[0] ^ TempPointer[1];
-					TempPointer[0] = TempPointer[0] ^ TempPointer[1];
+				Result = malloc(0);
+				int ResultSize = 0;
+				
+				Assert((FileSize%2) == 0);
+				while (FileSize != 0) {
+					uint16_t LowByte = 0, HighByte = 0;
+					uint32_t CodePoint = 0;
+					fread(&HighByte, sizeof(uint16_t), 1, FileStream);
+					{ // Swap
+						uint8_t Temp = HighByte & 0xff;
+						HighByte = ((HighByte & 0xff00) >> 8) | (HighByte & 0xff00);
+						HighByte = (HighByte & 0x00FF) | (Temp << 8);
+					}
+					
+					FileSize -= 2;
+					if ((HighByte & 0xFC00) == 0xD800) {
+						fread(&LowByte, sizeof(uint16_t), 1, FileStream);
+						{ // Swap
+							uint8_t Temp = LowByte & 0xff;
+							LowByte = ((LowByte & 0xff00) >> 8) | (LowByte & 0xff00);
+							LowByte = (LowByte & 0x00FF) | (Temp << 8);
+						}
+						FileSize -= 2;
+						if ((LowByte & 0xFC00) != 0xDC00) {
+							printf("[Error File Handling] A high surrogate was not followed by a low surrogate, This file is not valid UTF-16-BE\n");
+							*Success = FALSE;       
+						}
+						CodePoint = 0x10000 + ((HighByte & 0x03FF) << 10) + (LowByte & 0x03FF);
+					}
+					else if ((HighByte & 0xFC00) == 0xDC00) {
+						printf("[Error File Handling] A low surrogate was not followed by a high surrogate, This file is not valid UTF-16-BE\n");
+						*Success = FALSE;
+					}
+					else {
+						CodePoint = HighByte;
+					}
+
+					if ((CodePoint >= 0x0) && (CodePoint <= 0x7F)) { // One Byte
+						ResultSize += 1;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-1] = (uint8_t)CodePoint;
+					}
+					else if ((CodePoint >= 0x80) && (CodePoint <= 0x7FF)) { // Two Byte
+						ResultSize += 2;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-2] = 0xC0 | ((uint8_t)( (CodePoint >> 6) & 0x1F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else if ((CodePoint >= 0x800) && (CodePoint <= 0xFFFF)) { // Three Byte
+						ResultSize += 3;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-3] = 0xE0 | ((uint8_t)( (CodePoint >> (6*2)) & 0xF ));
+						Result[ResultSize-2] = 0x80 | ((uint8_t)( (CodePoint >> (6)) & 0x3F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else if ((CodePoint >= 0x10000) && (CodePoint <= 0x10FFFF)) { // Four Byte
+						ResultSize += 4;
+						Result = realloc(Result, ResultSize);
+						Result[ResultSize-4] = 0xF0 | ((uint8_t)( (CodePoint >> (6*3)) & 0x7 ));
+						Result[ResultSize-3] = 0x80 | ((uint8_t)( (CodePoint >> (6*2)) & 0x3F ));
+						Result[ResultSize-2] = 0x80 | ((uint8_t)( (CodePoint >> (6*1)) & 0x3F ));
+						Result[ResultSize-1] = 0x80 | ((uint8_t)( (CodePoint) & 0x3F ));
+					}
+					else {
+						printf("[Error File Handling] A invalid codepoint was encountered!\n");
+					}
 				}
+
+				Result = realloc(Result, ResultSize + 1);
+				Result[ResultSize] = 0;
 			}
 		}
 		
@@ -996,66 +1122,14 @@ wchar_t *LoadFileIntoMemory(FILE* FileStream, int FileSize, int *Success) {
 			    (ByteOrderMark[2] == 0xBF)) { // remove UFT-8 Header if present.
 				FileSize -= 3;
 				if (FileSize == 0) {
-					wprintf(L"[Error File Handling] This file contains no textual content!\n");
+					printf("[Error File Handling] This file contains no textual content!\n");
 					*Success = FALSE;
 				}
 			}
 			if (*Success) {
-				int LengthOfResult = 100;
-				int ResultIndex = 0;
-				Result = malloc(sizeof(wchar_t) * LengthOfResult);
-				
-				for (int Index = 0; Index < FileSize; Index++) {
-					if(ResultIndex >= LengthOfResult) {
-						LengthOfResult += 100;
-						Result = realloc(Result, sizeof(wchar_t) * LengthOfResult);
-					}
-					
-					uint8_t Buffer[4] = {0};
-					fread(&Buffer[0], sizeof(uint8_t), 1, FileStream);
-					uint8_t MultibyteCode = Buffer[0] & 0xF8;
-					if (MultibyteCode == 0xC0) { // 2 Bytes
-						fread(&Buffer[1], sizeof(uint8_t), 1, FileStream);
-						Result[ResultIndex] =
-							(Buffer[0] & 0x1F) |
-							((Buffer[1] & 0x3F) << 5);
-						ResultIndex++;
-					}
-					else if (MultibyteCode == 0xE0) { // 3 Bytes
-						fread(&Buffer[1], sizeof(uint8_t), 2, FileStream);
-						Result[ResultIndex] =
-							(Buffer[0] & 0x0F) |
-							((Buffer[1] & 0x3F) << 4) |
-							((Buffer[2] & 0x3F) << (4+6));
-						ResultIndex++;
-					}
-					else if (MultibyteCode == 0xF0) { // 4 Bytes
-						fread(&Buffer[1], sizeof(uint8_t), 3, FileStream);
-						uint32_t Codepoint =
-							(Buffer[0] & 0x07) |
-							((Buffer[1] & 0x3F) << 3) |
-							((Buffer[2] & 0x3F) << (3+6)) |
-							((Buffer[3] & 0x3F) << (3+6+6));
-						Result[ResultIndex] = 0xD800 | (Codepoint >> 10);
-						ResultIndex++;
-						if(ResultIndex >= LengthOfResult) {
-							LengthOfResult += 100;
-							Result = realloc(Result, sizeof(wchar_t) * LengthOfResult);
-						}
-						Result[ResultIndex] = 0xDC00 | Codepoint;
-						ResultIndex++;
-					}
-					else { // 1 Byte
-						Result[ResultIndex] = Buffer[0];
-						ResultIndex++;
-					}
-				}
-				
-				if(ResultIndex >= LengthOfResult) {
-						LengthOfResult += 100;
-						Result = realloc(Result, sizeof(wchar_t) * LengthOfResult);
-				}
-				Result[ResultIndex] = L'\0';
+				Result = malloc((FileSize + 1) * sizeof(*Result));
+				fread(Result, sizeof(char), FileSize, FileStream);
+				Result[FileSize] = '\0';
 			}
 		}
 		fclose(FileStream);

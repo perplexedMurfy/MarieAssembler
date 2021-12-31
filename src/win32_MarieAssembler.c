@@ -158,7 +158,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 			if (OutSymbolTable == 0 && GenSymbolTable == FALSE) {
 				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
 					Index++;
-					OutSymbolTable = _wfopen(Arg, L"w,ccs=UNICODE");
+					OutSymbolTable = _wfopen(Arg, L"w");
 					if (OutSymbolTable == 0) {
 						wprintf(L"I could not open the symbol table output file \"%s\" for writing!\n", Arg);
 						Success = FALSE;
@@ -182,7 +182,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 			if (OutListing == 0 && GenListing == FALSE) {
 				if (!((StartsWith(Arg, L"--")) || (Arg[0] == 0))) {
 					Index++;
-					OutListing = _wfopen(Arg, L"w,ccs=UNICODE");
+					OutListing = _wfopen(Arg, L"w");
 					if (OutListing == 0) {
 						wprintf(L"I could not open the listing output file \"%s\" for writing!\n", Arg);
 						Success = FALSE;
@@ -247,7 +247,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	}
 	if (GenListing) {
 		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
-		OutListing = _wfopen(AutoFileName, L"w,ccs=UNICODE");
+		OutListing = _wfopen(AutoFileName, L"w");
 		if (OutListing == 0) {
 			wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 			Success = FALSE;
@@ -256,7 +256,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	}
 	if (GenSymbolTable) {
 		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
-		OutSymbolTable = _wfopen(AutoFileName, L"w,ccs=UNICODE");
+		OutSymbolTable = _wfopen(AutoFileName, L"w");
 		if (OutSymbolTable == 0) {
 			wprintf(L"I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 			Success = FALSE;

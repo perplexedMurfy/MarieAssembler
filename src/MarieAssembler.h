@@ -11,99 +11,99 @@
 #define NO_OPCODE (0xFFFF0000)
 
 typedef struct {
-	wchar_t *String;
+	char *String;
 	int Length;
 	int Opcode;
 } keyword_entry;
 
 global_var const keyword_entry Keywords[] = {
 	{
-		.String = L"jns",
+		.String = "jns",
 		.Length = 3,
 		.Opcode = 0x0000,
 	},
 	{
-		.String = L"load",
+		.String = "load",
 		.Length = 4,
 		.Opcode = 0x1000,
 	},
 	{
-		.String = L"store",
+		.String = "store",
 		.Length = 5,
 		.Opcode = 0x2000,
 	},
 	{
-		.String = L"add",
+		.String = "add",
 		.Length = 3,
 		.Opcode = 0x3000,
 	},
 	{
-		.String = L"subt",
+		.String = "subt",
 		.Length = 4,
 		.Opcode = 0x4000,
 	},
 	{
-		.String = L"input",
+		.String = "input",
 		.Length = 5,
 		.Opcode = 0x5000,
 	},
 	{
-		.String = L"output",
+		.String = "output",
 		.Length = 6,
 		.Opcode = 0x6000,
 	},
 	{
-		.String = L"halt",
+		.String = "halt",
 		.Length = 4,
 		.Opcode = 0x7000,
 	},
 	{
-		.String = L"skipcond",
+		.String = "skipcond",
 		.Length = 8,
 		.Opcode = 0x8000,
 	},
 	{
-		.String = L"jump",
+		.String = "jump",
 		.Length = 4,
 		.Opcode = 0x9000,
 	},
 	{
-		.String = L"clear",
+		.String = "clear",
 		.Length = 5,
 		.Opcode = 0xA000,
 	},
 	{
-		.String = L"addi",
+		.String = "addi",
 		.Length = 4,
 		.Opcode = 0xB000,
 	},
 	{
-		.String = L"jumpi",
+		.String = "jumpi",
 		.Length = 5,
 		.Opcode = 0xC000,
 	},
 	{
-		.String = L"loadi",
+		.String = "loadi",
 		.Length = 5,
 		.Opcode = 0xD000,
 	},
 	{
-		.String = L"storei",
+		.String = "storei",
 		.Length = 6,
 		.Opcode = 0xE000,
 	},
 	{
-		.String = L".SetAddr",
+		.String = ".SetAddr",
 		.Length = 8,
 		.Opcode = NO_OPCODE,
 	},
 	{
-		.String = L".Ident",
+		.String = ".Ident",
 		.Length = 6,
 		.Opcode = NO_OPCODE,
 	},
 	{
-		.String = L"data",
+		.String = "data",
 		.Length = 4,
 		.Opcode = NO_OPCODE,
 	},
@@ -148,20 +148,22 @@ enum emit_code {
 
 typedef struct {
 	int Line, Column;
-	wchar_t *At;
+	char *At;
 } file_state;
 
 typedef struct {
-	wchar_t *Start;
-	int Length;
+	char *Start;
+	int CharCount;
+	int ByteCount;
 	int Address;
 	int Line;
 	int Column;
 } identifier_dest;
 
 typedef struct {
-	wchar_t *Start;
-	int Length;
+	char *Start;
+	int CharCount;
+	int ByteCount;
 	int Value;
 	int Line;
 	int Column;
