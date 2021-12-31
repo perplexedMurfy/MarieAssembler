@@ -80,25 +80,24 @@ wchar_t* GenerateOutputPath(wchar_t *InFileName, wchar_t *PostFix) {
 	return AutoFileName;
 }
 
-const char* HelpMessage =
-	"Usage: MarieAssembler <InFileName> [Output Options]\n"
-	"Where [Output Options] can be any combination of:\n"
-	"  --logisim [FileName] ==> Outputs Logisim rom image at [FileName], or if blank <InFileName>.LogisimImage\n"
-	"  --rawhex [FileName] ==> Outputs a file containing the raw hex for the program at [FileName], or if blank <InFileName>.hex\n"
-	"  --symboltable [FileName] ==> Outputs a file containing a symbol table for the program at [FileName], or if blank <InFileName>.sym\n"
-	"  --listing [FileName] ==> Outputs a file containing a listing for the program at [FileName], or if blank <InFileName>.lst\n";
+inline void PrintHelp(wchar_t *ApplicationName) {
+	const char* HelpMessage =
+		"Usage: %S <InFileName> [Output Options]\n"
+		"Where [Output Options] can be any combination of:\n"
+		"  --logisim [FileName] ==> Outputs Logisim rom image at [FileName], or if blank <InFileName>.LogisimImage\n"
+		"  --rawhex [FileName] ==> Outputs a file containing the raw hex for the program at [FileName], or if blank <InFileName>.hex\n"
+		"  --symboltable [FileName] ==> Outputs a file containing a symbol table for the program at [FileName], or if blank <InFileName>.sym\n"
+		"  --listing [FileName] ==> Outputs a file containing a listing for the program at [FileName], or if blank <InFileName>.lst\n";
+	
+	printf(HelpMessage, ApplicationName);
+}
 
 int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	FILE *InFile = 0, *OutLogisim = 0, *OutHex = 0, *OutSymbolTable = 0, *OutListing = 0;
+	wchar_t *InFileName = 0, *OutLogisimPath = 0, *OutHexPath = 0, *OutSymbolTablePath = 0, *OutListingPath = 0;
 	int GenLogisim = FALSE, GenHex = FALSE, GenSymbolTable = FALSE, GenListing = FALSE;
-	wchar_t *InFileName = 0;
 	uint64_t InFileSize = 0;
 	int Success = TRUE;
-
-	if (ArgCount == 1) {
-		printf(HelpMessage);
-		Success = FALSE;
-	}
 	
 	for (int Index = 1; Index < ArgCount;) {
 		wchar_t * Arg = Args[Index];
@@ -116,6 +115,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 						Success = FALSE;
 						break;
 					}
+					OutLogisimPath = Arg;
 				}
 				else {
 					GenLogisim = TRUE;
@@ -140,6 +140,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 						Success = FALSE;
 						break;
 					}
+					OutHexPath = Arg;
 				}
 				else {
 					GenHex = TRUE;
@@ -164,6 +165,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 						Success = FALSE;
 						break;
 					}
+					OutSymbolTablePath = Arg;
 				}
 				else {
 					GenSymbolTable = TRUE;
@@ -188,6 +190,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 						Success = FALSE;
 						break;
 					}
+					OutListingPath = Arg;
 				}
 				else {
 					GenListing = TRUE;
@@ -201,7 +204,6 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 		}
 		else if (StartsWith(Arg, L"--")) {
 			wprintf(L"Unknown commandline operation encountered: \"%s\"\n", Arg);
-			printf(HelpMessage);
 			Success = FALSE;
 			break;
 		}
@@ -218,8 +220,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 			}
 		}
 		else {
-			wprintf(L"Unknown commandline operation encountered: \"%s\"\n", Arg);
-			printf(HelpMessage);
+			wprintf(L"There can only be one input file, but more than one was provided!\nSecond input file path: \"%s\"\n", Arg);
 			Success = FALSE;
 			break;
 		}
@@ -227,41 +228,60 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 		Index++;
 	}
 
-	if (GenLogisim) {
-		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".LogisimImage");
-		OutLogisim = _wfopen(AutoFileName, L"w");
-		if (OutLogisim == 0) {
-			wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
-			Success = FALSE;
-		}
-		free(AutoFileName);
+	if (InFile == 0) {
+		wprintf(L"No input file was provided!\n");
+		Success = FALSE;
 	}
-	if (GenHex) {
-		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".hex");
-		OutHex = _wfopen(AutoFileName, L"wb");
-		if (OutHex == 0) {
-			wprintf(L"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
-			Success = FALSE;
+
+	if (Success) {
+		if (GenLogisim) {
+			wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".LogisimImage");
+			OutLogisim = _wfopen(AutoFileName, L"w");
+			if (OutLogisim == 0) {
+				wprintf(L"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				Success = FALSE;
+				free(AutoFileName);
+			}
+			else {
+				OutLogisimPath = AutoFileName;
+			}
 		}
-		free(AutoFileName);
-	}
-	if (GenListing) {
-		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
-		OutListing = _wfopen(AutoFileName, L"w");
-		if (OutListing == 0) {
-			wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
-			Success = FALSE;
+		if (GenHex) {
+			wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".hex");
+			OutHex = _wfopen(AutoFileName, L"wb");
+			if (OutHex == 0) {
+				wprintf(L"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				Success = FALSE;
+				free(AutoFileName);
+			}
+			else {
+				OutHexPath = AutoFileName;
+			}
 		}
-		free(AutoFileName);
-	}
-	if (GenSymbolTable) {
-		wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
-		OutSymbolTable = _wfopen(AutoFileName, L"w");
-		if (OutSymbolTable == 0) {
-			wprintf(L"I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
-			Success = FALSE;
+		if (GenListing) {
+			wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".lst");
+			OutListing = _wfopen(AutoFileName, L"w");
+			if (OutListing == 0) {
+				wprintf(L"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				Success = FALSE;
+				free(AutoFileName);
+			}
+			else {
+				OutListingPath = AutoFileName;
+			}
 		}
-		free(AutoFileName);
+		if (GenSymbolTable) {
+			wchar_t *AutoFileName = GenerateOutputPath(InFileName, L".sym");
+			OutSymbolTable = _wfopen(AutoFileName, L"w");
+			if (OutSymbolTable == 0) {
+				wprintf(L"I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				Success = FALSE;
+				free(AutoFileName);
+			}
+			else {
+				OutSymbolTablePath = AutoFileName;
+			}
+		}
 	}
 
 	if (Success) {
@@ -269,6 +289,30 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 	}
 	else {
 		printf("Exiting without invoking the assembler.\n");
+		printf("---------------------------------------\n");
+		PrintHelp(Args[0]);
+		
+		if (OutLogisim) {
+			fclose(OutLogisim);
+			Assert(OutLogisimPath != 0);
+			DeleteFile(OutLogisimPath);
+		}
+		if (OutSymbolTable) {
+			fclose(OutSymbolTable);
+			Assert(OutSymbolTablePath != 0);
+			DeleteFile(OutSymbolTablePath);
+		}
+		if (OutHex) {
+			fclose(OutHex);
+			Assert(OutHexPath != 0);
+			DeleteFile(OutHexPath);
+		}
+		if (OutListing) {
+			fclose(OutListing);
+			Assert(OutListingPath != 0);
+			DeleteFile(OutListingPath);
+		}
+		
 	}
 
 	return Success;
