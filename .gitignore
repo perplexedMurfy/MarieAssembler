@@ -9,5 +9,6 @@
 *.sym
 
 bin/obj
+bin/LinuxTestingSuite
 project.el
 
