@@ -18,6 +18,6 @@ struct paged_list {
 	struct paged_list *NextPage;
 };
 
-paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length);
-void AddToPagedList(paged_list *List, void *Data);
+translation_scope paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length);
+translation_scope void AddToPagedList(paged_list *List, void *Data);
 #endif

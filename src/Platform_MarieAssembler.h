@@ -47,6 +47,7 @@
 
 #define global_var static
 #define local_persist static
+#define translation_scope static
 
 #include <stdio.h>
 #include "MarieAssembler.h"

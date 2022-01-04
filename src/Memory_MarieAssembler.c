@@ -7,7 +7,7 @@
 #include <malloc.h>
 #include <string.h>
 
-extern inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
+translation_scope inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
 	paged_list *Result = 0;
 
 	Result = calloc(1, sizeof(paged_list));
@@ -20,7 +20,7 @@ extern inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Len
 	return Result;
 }
 
-extern inline void AddToPagedList(paged_list *List, void *Data) {
+translation_scope inline void AddToPagedList(paged_list *List, void *Data) {
 	while (List->NextFreeIndex == List->Length) {
 		if (List->NextPage) {
 			List = List->NextPage;
@@ -36,7 +36,7 @@ extern inline void AddToPagedList(paged_list *List, void *Data) {
 	List->NextFreeIndex++;
 }
 
-extern inline void* GetFromPagedList(paged_list *List, uint32_t Index) {
+translation_scope inline void* GetFromPagedList(paged_list *List, uint32_t Index) {
 	while (Index >= List->Length) {
 		Index -= List->Length;
 		if (List->NextPage) {

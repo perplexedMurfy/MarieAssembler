@@ -80,7 +80,7 @@ wchar_t* GenerateOutputPath(wchar_t *InFileName, wchar_t *PostFix) {
 	return AutoFileName;
 }
 
-inline void PrintHelp(wchar_t *ApplicationName) {
+translation_scope inline void PrintHelp(wchar_t *ApplicationName) {
 	const char* HelpMessage =
 		"Usage: %S <InFileName> [Output Options]\n"
 		"Where [Output Options] can be any combination of:\n"

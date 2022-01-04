@@ -69,7 +69,7 @@ char* GenerateOutputPath(char *InFileName, char *PostFix) {
 	return AutoFileName;
 }
 
-static inline void PrintHelp(char *ApplicationName) {
+translation_scope inline void PrintHelp(char *ApplicationName) {
 	const char* HelpMessage =
 		"Usage: %s <InFileName> [Output Options]\n"
 		"Where [Output Options] can be any combination of:\n"
