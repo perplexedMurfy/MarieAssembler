@@ -9,7 +9,6 @@
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
-#include "Memory_MarieAssembler.h"
 
 #include "Platform_MarieAssembler.h"
 
@@ -17,7 +16,7 @@ void Platform_Breakpoint() {
 	raise(SIGINT);
 }
 
-size_t Platform_GetFileSize(char *FileName, int *Success) {
+size_t GetFileSize(char *FileName, int *Success) {
 	struct stat fInfo;
 
 	if(stat(FileName, &fInfo) == -1) {
@@ -70,9 +69,7 @@ char* GenerateOutputPath(char *InFileName, char *PostFix) {
 	return AutoFileName;
 }
 
-void PrintHelp(char *ApplicationName);
-
-inline void PrintHelp(char *ApplicationName) {
+static inline void PrintHelp(char *ApplicationName) {
 	const char* HelpMessage =
 		"Usage: %s <InFileName> [Output Options]\n"
 		"Where [Output Options] can be any combination of:\n"
@@ -211,7 +208,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	}
 
 	if (Success) {
-		InFileSize = Platform_GetFileSize(Arg, &Success);
+		InFileSize = GetFileSize(Arg, &Success);
 		if (GenLogisim) {
 			char *AutoFileName = GenerateOutputPath(InFileName, ".LogisimImage");
 			OutLogisim = fopen(AutoFileName, "w");

@@ -54,17 +54,6 @@
 //-----
 //~ Functions defined in the platform layer
 
-/* Gets filesize
- * @Param FileName Name of file
- * @Param Success if this function was successful.
- * @Return the size of the file.
- */
-#ifdef _WIN32
-size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
-#else
-size_t Platform_GetFileSize(char *FileName, int* Success);
-#endif
-
 void Platform_Breakpoint();
 
 //-----
