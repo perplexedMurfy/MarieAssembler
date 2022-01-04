@@ -41,8 +41,7 @@ size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
 int IndexOfFromEnd(wchar_t *String, wchar_t Target) {
 	int Result = 0;
 
-	while(String[Result] != L'\0') { Result++; }
-	Result--;
+	Result = wcslen(String) - 1;
 	
 	for(; String[Result] != L'\0'; Result--) {
 		if (String[Result] == Target) { return Result; }
