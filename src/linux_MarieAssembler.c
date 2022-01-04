@@ -54,7 +54,7 @@ int StartsWith(char *String, char *Target) {
 
 char* GenerateOutputPath(char *InFileName, char *PostFix) {
 	int DotIndex = IndexOfFromEnd(InFileName, '.');
-	int PathSeperatorIndex = Max(IndexOfFromEnd(InFileName, '/'), IndexOfFromEnd(InFileName, '/'));
+	int PathSeperatorIndex = IndexOfFromEnd(InFileName, '/');
 	if (DotIndex < PathSeperatorIndex || DotIndex == -1) {
 		// The dot we found was part of the file path.
 		// Or we didn't find a dot.
