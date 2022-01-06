@@ -35,7 +35,7 @@ size_t GetFileSize(char *FileName, int *Success) {
 int IndexOfFromEnd(char *String, char Target) {
 	int Result = strlen(String);
 
-	for(; Result > 0; Result--) {
+	for(; Result >= 0; Result--) {
 		if (String[Result] == Target) {return Result;}
 	}
 	return -1;
