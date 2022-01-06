@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include "Platform_MarieAssembler.h"
 
@@ -87,133 +88,147 @@ int main(int argc, char *argv[], char *envp[]) {
 	int GenLogisim = FALSE, GenHex = FALSE, GenSymbolTable = FALSE, GenListing = FALSE;
 	uint64_t InFileSize = 0;
 	int Success = TRUE;
-	int option_index = 0;
-	int c;
 
-	static struct option long_options[] = {
-		{"logisim",		optional_argument, 0, 1},
-		{"rawhex",		optional_argument, 0, 2},
-		{"symboltable", optional_argument, 0, 3},
-		{"listing",		optional_argument, 0, 4},
-		{0, 0, 0, 0}
-	};
+	for (int Index = 1; Index < argc;) {
+		char * Arg = argv[Index];
 
-	char *Arg;
+		if (StartsWith(Arg, "--logisim")) {
+			if (Index + 1 >= argc) { Arg = ""; }
+			else { Arg = argv[Index + 1]; }
 
-	// Input file is before arguments
-	char firstTwo[2];
-	strncpy(firstTwo, argv[optind], 2);
-	if (strcmp("--", firstTwo) != 0) {
-		Arg = argv[optind];
-		InFileName = Arg;
-		InFile = fopen(InFileName, "r");
-		if (InFile == 0) {
-			int err = errno;
-			fprintf(stderr, "I could not open the input file \"%s\" for reading!\n%s\n", Arg, strerror(err));
-			Success = FALSE;
+			if (OutLogisim == 0 && GenLogisim == FALSE) {
+				if (!((StartsWith(Arg, "--")) || (Arg[0] == 0))) {
+					Index++;
+					OutLogisim = fopen(Arg, "w");
+					if (OutLogisim == 0) {
+						fprintf(stderr, "I could not open the Logisim output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+					OutLogisimPath = Arg;
+				}
+				else {
+					GenLogisim = TRUE;
+				}
+			}
+			else {
+				fprintf(stderr, "Option --logisim was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
 		}
-		optind += 1;
-	}
+		else if (StartsWith(Arg, "--rawhex")) {
+			if (Index + 1 >= argc) { Arg = ""; }
+			else { Arg = argv[Index + 1]; }
 
-	while (1) {
-		option_index = 0;
-		c = getopt_long(argc, argv, "", long_options, &option_index);
+			if (OutHex == 0 && GenHex == FALSE) {
+				if (!((StartsWith(Arg, "--")) || (Arg[0] == 0))) {
+					Index++;
+					OutHex = fopen(Arg, "wb");
+					if (OutHex == 0) {
+						fprintf(stderr, "I could not open the raw hex output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+					OutHexPath = Arg;
+				}
+				else {
+					GenHex = TRUE;
+				}
+			}
+			else {
+				fprintf(stderr, "Option --rawhex was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, "--symboltable")) {
+			if (Index + 1 >= argc) { Arg = ""; }
+			else { Arg = argv[Index + 1]; }
 
-		// Detect end of options
-		if (c == -1) {
+			if (OutSymbolTable == 0 && GenSymbolTable == FALSE) {
+				if (!((StartsWith(Arg, "--")) || (Arg[0] == 0))) {
+					Index++;
+					OutSymbolTable = fopen(Arg, "w");
+					if (OutSymbolTable == 0) {
+						fprintf(stderr, "I could not open the symbol table output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+					OutSymbolTablePath = Arg;
+				}
+				else {
+					GenSymbolTable = TRUE;
+				}
+			}
+			else {
+				fprintf(stderr, "Option --symboltable was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, "--listing")) {
+			if (Index + 1 >= argc) { Arg = ""; }
+			else { Arg = argv[Index + 1]; }
+
+			if (OutListing == 0 && GenListing == FALSE) {
+				if (!((StartsWith(Arg, "--")) || (Arg[0] == 0))) {
+					Index++;
+					OutListing = fopen(Arg, "w");
+					if (OutListing == 0) {
+						fprintf(stderr, "I could not open the listing output file \"%s\" for writing!\n", Arg);
+						Success = FALSE;
+						break;
+					}
+					OutListingPath = Arg;
+				}
+				else {
+					GenListing = TRUE;
+				}
+			}
+			else {
+				fprintf(stderr, "Option --listing was provided twice!\n");
+				Success = FALSE;
+				break;
+			}
+		}
+		else if (StartsWith(Arg, "--")) {
+			fprintf(stderr, "Unknown commandline operation encountered: \"%s\"\n", Arg);
+			Success = FALSE;
+			break;
+		}
+		else if (InFile == 0) { // This must be our one input file.
+			InFile = fopen(Arg, "rb");
+			if (InFile == 0) {
+				fprintf(stderr, "I could not open the input file \"%s\" for reading!\n", Arg);
+				Success = FALSE;
+				break;
+			}
+			if (Success) {
+				InFileSize = GetFileSize(Arg, &Success);
+				InFileName = Arg;
+			}
+		}
+		else {
+			fprintf(stderr, "There can only be one input file, but more than one was provided!\nSecond input file path: \"%s\"\n", Arg);
+			Success = FALSE;
 			break;
 		}
 
-		switch (c) {
-			case 1:
-				GenLogisim = TRUE;
-				OutLogisimPath = optarg;
-				if (OutListingPath != NULL) {
-					OutLogisim = fopen(OutLogisimPath, "w");
-					if (OutLogisim == NULL) {
-						int err = errno;
-						fprintf(stderr, "Could not open Logisim output for writing\n%s\n", strerror(err));
-						Success = FALSE;
-					}
-				}
-				break;
-			case 2:
-				GenHex = TRUE;
-				OutHexPath = optarg;
-				if (OutHexPath != NULL) {
-					OutHex = fopen(OutHexPath, "w");
-					if (OutHex == NULL) {
-						int err = errno;
-						fprintf(stderr, "Could not open hex output for writing\n%s\n", strerror(err));
-						Success = FALSE;
-					}
-				}
-				break;
-			case 3:
-				GenSymbolTable = TRUE;
-				OutSymbolTablePath = optarg;
-				if (OutSymbolTablePath != NULL) {
-					OutSymbolTable = fopen(OutSymbolTablePath, "w");
-					if (OutSymbolTable == NULL) {
-						int err = errno;
-						fprintf(stderr, "Could not open symbol table for writing\n%s\n", strerror(err));
-						Success = FALSE;
-					}
-				}
-				break;
-			case 4:
-				GenListing = TRUE;
-				OutListingPath = optarg;
-				if (optarg != NULL) {
-					OutListing = fopen(OutListingPath, "w");
-					if (OutListing == NULL) {
-						int err = errno;
-						fprintf(stderr, "Could not open listing for writing\n%s\n", strerror(err));
-						Success = FALSE;
-					}
-				}
-				break;
-			case '?':
-				// getout_long already printed an error message
-				break;
-			default:
-				exit(1);
-		}
+		Index++;
 	}
 
-	if (optind < argc) {
-		strncpy(firstTwo, argv[optind], 2);
-		if (strcmp("--", firstTwo) != 0) {
-			Arg = argv[optind];
-			InFileName = Arg;
-			InFile = fopen(InFileName, "r");
-			if (InFile == 0) {
-				int err = errno;
-				fprintf(stderr, "I could not open the input file \"%s\" for reading!\n%s\n", Arg, strerror(err));
-				Success = FALSE;
-			}
-			if (optind+1 < argc) {
-				strncpy(firstTwo, argv[optind+1], 2);
-				if (strcmp("--", firstTwo) != 0) {
-					fprintf(stderr, "Please supply only one input file!\n");
-					Success = FALSE;
-				}
-			}
-		}
-	}
-
-	if (optind == argc && InFileName == NULL) {
-		fprintf(stderr, "Please supply an input file\n");
+	if (InFile == 0) {
+		fprintf(stderr, "No input file was provided!\n");
 		Success = FALSE;
 	}
 
 	if (Success) {
-		InFileSize = GetFileSize(Arg, &Success);
 		if (GenLogisim) {
 			char *AutoFileName = GenerateOutputPath(InFileName, ".LogisimImage");
 			OutLogisim = fopen(AutoFileName, "w");
 			if (OutLogisim == 0) {
-				fprintf(stderr,"I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				fprintf(stderr, "I could not open the Logisim output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 				Success = FALSE;
 				free(AutoFileName);
 			}
@@ -223,9 +238,9 @@ int main(int argc, char *argv[], char *envp[]) {
 		}
 		if (GenHex) {
 			char *AutoFileName = GenerateOutputPath(InFileName, ".hex");
-			OutHex = fopen(AutoFileName, "w");
+			OutHex = fopen(AutoFileName, "wb");
 			if (OutHex == 0) {
-				fprintf(stderr,"I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				fprintf(stderr, "I could not open the raw hex output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 				Success = FALSE;
 				free(AutoFileName);
 			}
@@ -237,7 +252,7 @@ int main(int argc, char *argv[], char *envp[]) {
 			char *AutoFileName = GenerateOutputPath(InFileName, ".lst");
 			OutListing = fopen(AutoFileName, "w");
 			if (OutListing == 0) {
-				fprintf(stderr,"I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				fprintf(stderr, "I could not open the listing output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 				Success = FALSE;
 				free(AutoFileName);
 			}
@@ -249,7 +264,7 @@ int main(int argc, char *argv[], char *envp[]) {
 			char *AutoFileName = GenerateOutputPath(InFileName, ".sym");
 			OutSymbolTable = fopen(AutoFileName, "w");
 			if (OutSymbolTable == 0) {
-				fprintf(stderr,"I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
+				fprintf(stderr, "I could not open the symbol table output file's auto-generated path \"%s\" for writing!\n", AutoFileName);
 				Success = FALSE;
 				free(AutoFileName);
 			}
@@ -261,7 +276,8 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	if (Success) {
 		Success = ApplicationMain(InFile, InFileSize, OutLogisim, OutHex, OutSymbolTable, OutListing);
-	} else {
+	}
+	else {
 		printf("Exiting without invoking the assembler.\n");
 		printf("---------------------------------------\n");
 		PrintHelp(argv[0]);
@@ -286,9 +302,13 @@ int main(int argc, char *argv[], char *envp[]) {
 			Assert(OutListingPath != 0);
 			remove(OutListingPath);
 		}
-	}
 
-	// If you return 1, the shell will consider the program failed, which
-	// we don't want if it didn't actually fail.
+	}
+	// Return 0 on success because 1 is generally interpreted as an error, so if you were
+	// to use it in a script and have a line to exit if the assembler fails like so
+	//
+	// MarieAssembler --rawhex prog.hex prog.MarieAsm || echo "Assembler failed!" && exit 1
+	//
+	// It would exit
 	return Success ? 0 : 1;
 }
