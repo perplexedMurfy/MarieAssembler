@@ -43,7 +43,7 @@ int IndexOfFromEnd(wchar_t *String, wchar_t Target) {
 
 	Result = wcslen(String) - 1;
 	
-	for(; String[Result] != L'\0'; Result--) {
+	for(; Result >= 0; Result--) {
 		if (String[Result] == Target) { return Result; }
 	}
 	return -1;
