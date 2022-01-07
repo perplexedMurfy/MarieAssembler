@@ -176,4 +176,10 @@ typedef struct {
 
 #define ArraySize(Array) (sizeof(Array)/sizeof(*Array))
 
+global_var const char* const ReservedNames[] = {
+	"ram",
+	"if",
+	"goto",
+};
+
 #endif

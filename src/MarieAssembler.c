@@ -272,6 +272,21 @@ void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const 
 	}
 }
 
+translation_scope inline int CheckIfIdentifierNameIsReserved(char *Start, int ByteCount, int CharCount, const file_state * const File) {
+	int DidErrorOccur = FALSE;
+	for (int Index = 0; Index < KW_COUNT; Index++) {
+		ReportErrorConditionally((Keywords[Index].Length == ByteCount) && CompareStrCaseInsensitive(Start, Keywords[Index].String, ByteCount), &DidErrorOccur, "[Error L:%d C:%d] Identifier \"%.*s\" cannot the same name as a memonic! Please name thhe idnetifier something else.\n", File->Line, File->Column - CharCount, ByteCount, Start);
+		if (DidErrorOccur == TRUE) { break; }
+	}
+			
+	for (int Index = 0; Index < ArraySize(ReservedNames); Index++) {
+		ReportErrorConditionally((strlen(ReservedNames[Index]) == ByteCount) && CompareStrCaseInsensitive(Start, ReservedNames[Index], ByteCount), &DidErrorOccur, "[Error L:%d C:%d] Identifier name \"%.*s\" is reserved! Please name the identifier something else.\n", File->Line, File->Column - CharCount, ByteCount, Start);
+		if (DidErrorOccur == TRUE) { break; }
+	}
+	
+	return DidErrorOccur;
+}
+
 translation_scope inline int WriteProgramData(file_state *File, uint16_t Data, int CurrentAddress, uint8_t ProgramMetaDataFlags) {
 	int Success = FALSE;
 	ReportErrorConditionally(ProgramMetaData[CurrentAddress] & PMD_IsOccupied, &Success, "[Error L:%d C:%d] An instruction overlapped another instruction! Pay mind to your usage of .SetAddr\n", File->Line, File->Column);
@@ -335,8 +350,11 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 				WriteProgramData(File, Keywords[KeywordIndex].Opcode | Address, CurrentAddress, PMD_IsOccupied);
 			}
 			else if (ExtractIdentifier(File, &IdentifierDest.CharCount, &IdentifierDest.ByteCount)) {
-				AddToPagedList(IdentifierDestinationList, &IdentifierDest);
-				WriteProgramData(File, Keywords[KeywordIndex].Opcode, CurrentAddress, PMD_IsOccupied | PMD_UsedIdentifier);
+				DidErrorOccur = CheckIfIdentifierNameIsReserved(IdentifierDest.Start, IdentifierDest.ByteCount, IdentifierDest.CharCount, File);
+				if (!DidErrorOccur) {
+					AddToPagedList(IdentifierDestinationList, &IdentifierDest);
+					WriteProgramData(File, Keywords[KeywordIndex].Opcode, CurrentAddress, PMD_IsOccupied | PMD_UsedIdentifier);
+				}
 			}
 			else {
 				ReportErrorConditionally(TRUE, &DidErrorOccur, "[Error L:%d C:%d] Failed to read an argument for %s operation. Please provide a Hex Address or a Identifier.\n", File->Line, File->Column, Keywords[KeywordIndex].String);
@@ -411,10 +429,12 @@ int Assemble(file_state *File, paged_list *IdentifierDestinationList, paged_list
 			
 			identifier_source Data = {.Start = File->At, .Value = CurrentAddress - 1, .Line = File->Line, .Column = File->Column};
 
-			ReportErrorConditionally(LastLineOperationWasProcessed != File->Line, &DidErrorOccur, "[Error L:%d C:%d] Identifiers must follow right after a operation on the same line.\nEx: data 0d0 .Ident Foo\nIf you don't like it, change it!\n", File->Line, File->Column); 
+			ReportErrorConditionally(LastLineOperationWasProcessed != File->Line, &DidErrorOccur, "[Error L:%d C:%d] Identifiers must follow right after a operation on the same line.\nEx: data 0d0 .Ident Foo\n", File->Line, File->Column); 
 			ReportErrorConditionally(ExtractIdentifier(File, &Data.CharCount, &Data.ByteCount) == FALSE, &DidErrorOccur, "[Error L:%d C:%d] Failed to find an Identifier Name after .Ident!\n", File->Line, File->Column);
+			
+			DidErrorOccur = CheckIfIdentifierNameIsReserved(Data.Start, Data.ByteCount, Data.CharCount, File);
 
-			for (int Index = 0; ; Index++) {
+			for (int Index = 0; !DidErrorOccur; Index++) {
 				const identifier_source *IdentifierSource = GetFromPagedList(IdentifierSourceList, Index);
 				if (IdentifierSource == 0) { break; }
 		

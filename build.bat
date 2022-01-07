@@ -3,7 +3,7 @@ cd %~dp0
 
 rem If "debug" is not supplied as the first argument to this script, we will build in release mode.
 
-set CL_flags=-nologo -TC -Fo./bin/obj/
+set CL_flags=-nologo -TC -Fo./bin/obj/ -wd4090
 if "%1"=="debug" (
 	set CL_flags=%CL_flags% -Zi -MTd -DDEBUG -Od
 ) else (
