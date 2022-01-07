@@ -30,6 +30,11 @@ int IncrementFilePosition(file_state *File, int CharCount) {
 	uintptr_t InitalPtr = (uintptr_t)File->At;
 	
 	for (; CharCount != 0; CharCount--) {
+		if (File->At[0] == '\n') {
+			File->Column = 1;
+			File->Line += 1;
+		}
+	
 		if ((File->At[0] & 0xF8) == 0xF0) { // 4 byte charcter
 			File->At += 4;
 		}
@@ -47,10 +52,6 @@ int IncrementFilePosition(file_state *File, int CharCount) {
 		}
 		
 		File->Column += 1;
-		if (File->At[0] == '\n') {
-			File->Column = 0;
-			File->Line += 1;
-		}
 	}
 
 	Assert(((uintptr_t)File->At) > InitalPtr);
