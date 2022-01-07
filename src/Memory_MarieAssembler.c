@@ -5,8 +5,9 @@
 
 #include "Memory_MarieAssembler.h"
 #include <malloc.h>
+#include <string.h>
 
-inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
+translation_scope inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
 	paged_list *Result = 0;
 
 	Result = calloc(1, sizeof(paged_list));
@@ -19,7 +20,7 @@ inline paged_list* AllocatePagedList(uint32_t SizeOfElement, uint32_t Length) {
 	return Result;
 }
 
-inline void AddToPagedList(paged_list *List, void *Data) {
+translation_scope inline void AddToPagedList(paged_list *List, void *Data) {
 	while (List->NextFreeIndex == List->Length) {
 		if (List->NextPage) {
 			List = List->NextPage;
@@ -35,7 +36,7 @@ inline void AddToPagedList(paged_list *List, void *Data) {
 	List->NextFreeIndex++;
 }
 
-inline void* GetFromPagedList(paged_list *List, uint32_t Index) {
+translation_scope inline void* GetFromPagedList(paged_list *List, uint32_t Index) {
 	while (Index >= List->Length) {
 		Index -= List->Length;
 		if (List->NextPage) {

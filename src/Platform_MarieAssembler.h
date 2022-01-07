@@ -47,19 +47,13 @@
 
 #define global_var static
 #define local_persist static
+#define translation_scope static
 
 #include <stdio.h>
 #include "MarieAssembler.h"
 
 //-----
 //~ Functions defined in the platform layer
-
-/* Gets filesize
- * @Param FileName Name of file
- * @Param Success if this function was successful.
- * @Return the size of the file.
- */
-size_t Platform_GetFileSize(wchar_t* FileName, int* Success);
 
 void Platform_Breakpoint();
 
@@ -69,6 +63,7 @@ void Platform_Breakpoint();
 /* "Main" function for the application
  * While the application's actual entry point is in the platform spefic file, ApplicationMain() actually runs the application.
  * @Params InFile  Handle to the input file
+ * @Params InFileSize  Size in bytes of the file which InFile repersents.
  * @Params LogisimOut  Handle where a Logisim rom file should be writen to
  * @Params RawHexOut  Handle where file containing a raw hex output should be writen to
  * @Params SymbolTableOut  Handle where a symbol table should be writen to

@@ -23,7 +23,7 @@ void Platform_Breakpoint() {
 	__debugbreak();
 }
 
-size_t Platform_GetFileSize(wchar_t *FileName, int *Success) {
+size_t win32_GetFileSize(wchar_t *FileName, int *Success) {
 	LARGE_INTEGER Result = {0};
 	
 	HANDLE FileHandle = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -79,7 +79,7 @@ wchar_t* GenerateOutputPath(wchar_t *InFileName, wchar_t *PostFix) {
 	return AutoFileName;
 }
 
-inline void PrintHelp(wchar_t *ApplicationName) {
+translation_scope inline void PrintHelp(wchar_t *ApplicationName) {
 	const char* HelpMessage =
 		"Usage: %S <InFileName> [Output Options]\n"
 		"Where [Output Options] can be any combination of:\n"
@@ -214,7 +214,7 @@ int wmain(int ArgCount, wchar_t **Args, wchar_t **Env) {
 				break;
 			}
 			if (Success) {
-				InFileSize = Platform_GetFileSize(Arg, &Success);
+				InFileSize = win32_GetFileSize(Arg, &Success);
 				InFileName = Arg;
 			}
 		}

@@ -9,5 +9,7 @@
 *.sym
 
 bin/obj
+bin/LinuxTestingSuite
+bin/MarieAssembler
 project.el
 

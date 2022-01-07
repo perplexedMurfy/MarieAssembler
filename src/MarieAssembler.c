@@ -231,7 +231,7 @@ int CompareStr(char *A, char *B, uint64_t Len) {
 	return Result;
 }
 
-inline int CompareStrToKeyword(char *Str, int FileKeywordLength, const keyword_entry Keyword) {
+translation_scope inline int CompareStrToKeyword(char *Str, int FileKeywordLength, const keyword_entry Keyword) {
 	if (FileKeywordLength != Keyword.Length) {
 		return FALSE;
 	}
@@ -254,7 +254,7 @@ void ReportErrorConditionally(int ConditionOfFailure, int *DidErrorOccur, const 
 	}
 }
 
-inline int WriteProgramData(file_state *File, uint16_t Data, int CurrentAddress, uint8_t ProgramMetaDataFlags) {
+translation_scope inline int WriteProgramData(file_state *File, uint16_t Data, int CurrentAddress, uint8_t ProgramMetaDataFlags) {
 	int Success = FALSE;
 	ReportErrorConditionally(ProgramMetaData[CurrentAddress] & PMD_IsOccupied, &Success, "[Error L:%d C:%d] An instruction overlapped another instruction! Pay mind to your usage of .SetAddr\n", File->Line, File->Column);
 	Program[CurrentAddress] = Data;
