@@ -4,10 +4,8 @@
  */
 
 /*TODO LIST
- * - identifier_source.Length and identifier_dest.Length member repersents the the length in bytes of the identifier. Normally we're able to use the length in bytes as the length of characters and it's fine, but when we process a identifier with a multibyte unicode character using the length in bytes will result in incorrect printouts.
  * - Replace the fixed size arena with a growable arena.
  * - Remove all @ErrorReporting tags. Students will use this, we want to be as nice to them as possible!
- * - Make keyword match case insensitve.
  */
 
 #include "MarieAssembler.h"
@@ -231,12 +229,31 @@ int CompareStr(char *A, char *B, uint64_t Len) {
 	return Result;
 }
 
+int CompareStrCaseInsensitive(char *A, char *B, uint64_t Len) {
+	int Result = FALSE;
+	uint64_t Index = 0;
+	while (Index < Len) {	
+		if (A[Index] == '\0' || B[Index] == '\0') { break; }
+		
+		char TempA = A[Index];
+		if (TempA >= 'a' && TempA <= 'z') { TempA = TempA & 0xDF; }
+		
+		char TempB = B[Index];
+		if (TempB >= 'a' && TempB <= 'z') { TempB = TempB & 0xDF; }
+		
+		Result = TempA == TempB;
+		if (Result == FALSE) { break; }
+		Index++;
+	}
+	return Result;
+}
+
 translation_scope inline int CompareStrToKeyword(char *Str, int FileKeywordLength, const keyword_entry Keyword) {
 	if (FileKeywordLength != Keyword.Length) {
 		return FALSE;
 	}
 	else {
-		return CompareStr(Str, Keyword.String, Keyword.Length);
+		return CompareStrCaseInsensitive(Str, Keyword.String, Keyword.Length);
 	}
 }
 
