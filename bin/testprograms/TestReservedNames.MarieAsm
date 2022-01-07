@@ -1,0 +1,7 @@
+/ The following should fail to compile.
+
+store store .Ident store
+store load .Ident load
+jump jump .Ident jump
+
+jns .Ident .Ident .Ident

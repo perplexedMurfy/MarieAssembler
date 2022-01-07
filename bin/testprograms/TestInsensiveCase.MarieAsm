@@ -1,0 +1,6 @@
+jns 0x000
+JnS 0x000
+Load 0x000 .IdEnT Test
+Store 0x000
+HALT
+
