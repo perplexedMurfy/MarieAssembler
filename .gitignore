@@ -1,6 +1,10 @@
 *.exe
 *.ilk
 *.pdb
+*.exp
+*.lib
+*.map
+
 *.rdbg
 
 *.hex
@@ -13,3 +17,7 @@ bin/LinuxTestingSuite
 bin/MarieAssembler
 project.el
 
+win32GUI_MarieAssembler/.vs
+win32GUI_MarieAssembler/bin/*
+win32GUI_MarieAssembler/obj/*
+win32GUI_MarieAssembler/*.vbproj.user

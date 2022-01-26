@@ -52,3 +52,24 @@ translation_scope inline void* GetFromPagedList(paged_list *List, uint32_t Index
 	}
 	return 0;
 }
+
+translation_scope inline void FreePagedList(paged_list *List) {
+	paged_list *Last = 0;
+	paged_list *Temp = List;
+	
+	while (List) {
+		if (Temp->NextPage) {
+			Last = Temp;
+			Temp = Temp->NextPage;
+		}
+		else {
+			free(Temp->Memory);
+			free(Temp);
+
+			if (Last) { Last->NextPage = 0; }
+
+			if (Temp == List) { List = 0; }
+			else { Temp = List; }
+		}
+	}
+}

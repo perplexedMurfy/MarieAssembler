@@ -962,7 +962,8 @@ int OutputListing(FILE *FileStream, paged_list *IdentifierDestinationList, paged
 			InMemoryGap = TRUE;
 		}
 	}
-	
+
+	free(ContentsOfAC);
 	fclose(FileStream);
 
 	if (Success == FALSE) {
@@ -1183,12 +1184,18 @@ int ApplicationMain(FILE *InFile, int InFileSize, FILE *OutLogisim, FILE *OutRaw
 		printf("A input file was not provided!\n");
 	}
 
+	// Ensure that Program is actually zero.
+	// This will be needed if this program is used as a DLL!
+	memset(Program, 0, sizeof(Program));
+	memset(ProgramMetaData, 0, sizeof(ProgramMetaData));
+
 	if (Success) {
 		file_state FileState = {
 			.Line = 1,
 			.Column = 0,
 		};
-		FileState.At = LoadFileIntoMemory(InFile, InFileSize, &Success);
+		char *StartOfFile = LoadFileIntoMemory(InFile, InFileSize, &Success);
+		FileState.At = StartOfFile;
 
 		paged_list *IdentifierDestinationList = AllocatePagedList(sizeof(identifier_dest), 10);
 		paged_list *IdentifierSourceList = AllocatePagedList(sizeof(identifier_source), 10);
@@ -1215,7 +1222,12 @@ int ApplicationMain(FILE *InFile, int InFileSize, FILE *OutLogisim, FILE *OutRaw
 			}
 			
 		}
+
+		if (StartOfFile) { free(StartOfFile); }
+		if (IdentifierDestinationList) { FreePagedList(IdentifierDestinationList); }
+		if (IdentifierSourceList) { FreePagedList(IdentifierSourceList); }
 	}
+	
 
 	return Success;
 }
