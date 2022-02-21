@@ -1,4 +1,5 @@
 *.exe
+*.dll
 *.ilk
 *.pdb
 *.exp
@@ -17,7 +18,7 @@ bin/LinuxTestingSuite
 bin/MarieAssembler
 project.el
 
-src/win32GUI_MarieAssembler/.vs
-src/win32GUI_MarieAssembler/bin/*
-src/win32GUI_MarieAssembler/obj/*
-src/win32GUI_MarieAssembler/*.vbproj.user
+MarieAssembler_win32GUI/.vs
+MarieAssembler_win32GUI/MarieAssembler_win32GUI/bin/*
+MarieAssembler_win32GUI/MarieAssembler_win32GUI/obj/*
+MarieAssembler_win32GUI/*.vbproj.user

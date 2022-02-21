@@ -50,9 +50,9 @@ Partial Class Form1
         '
         'AssembleButton
         '
-        Me.AssembleButton.Location = New System.Drawing.Point(78, 333)
+        Me.AssembleButton.Location = New System.Drawing.Point(67, 289)
         Me.AssembleButton.Name = "AssembleButton"
-        Me.AssembleButton.Size = New System.Drawing.Size(75, 25)
+        Me.AssembleButton.Size = New System.Drawing.Size(64, 22)
         Me.AssembleButton.TabIndex = 1
         Me.AssembleButton.Text = "Assemble"
         Me.AssembleButton.UseVisualStyleBackColor = True
@@ -62,28 +62,27 @@ Partial Class Form1
         Me.GroupBox2.AutoSize = True
         Me.GroupBox2.Controls.Add(Me.InputFileButton)
         Me.GroupBox2.Controls.Add(Me.InputFileBox)
-        Me.GroupBox2.Location = New System.Drawing.Point(12, 5)
+        Me.GroupBox2.Location = New System.Drawing.Point(10, 4)
         Me.GroupBox2.Name = "GroupBox2"
-        Me.GroupBox2.Size = New System.Drawing.Size(228, 64)
+        Me.GroupBox2.Size = New System.Drawing.Size(196, 58)
         Me.GroupBox2.TabIndex = 3
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "Input File"
         '
         'InputFileButton
         '
-        Me.InputFileButton.Location = New System.Drawing.Point(197, 19)
+        Me.InputFileButton.Location = New System.Drawing.Point(169, 19)
         Me.InputFileButton.Name = "InputFileButton"
-        Me.InputFileButton.Size = New System.Drawing.Size(25, 23)
+        Me.InputFileButton.Size = New System.Drawing.Size(21, 20)
         Me.InputFileButton.TabIndex = 0
         Me.InputFileButton.Text = "..."
         Me.InputFileButton.UseVisualStyleBackColor = True
         '
         'InputFileBox
         '
-        Me.InputFileBox.Dock = System.Windows.Forms.DockStyle.Left
-        Me.InputFileBox.Location = New System.Drawing.Point(3, 19)
+        Me.InputFileBox.Location = New System.Drawing.Point(6, 19)
         Me.InputFileBox.Name = "InputFileBox"
-        Me.InputFileBox.Size = New System.Drawing.Size(188, 23)
+        Me.InputFileBox.Size = New System.Drawing.Size(157, 20)
         Me.InputFileBox.TabIndex = 1
         '
         'GroupBox1
@@ -100,9 +99,9 @@ Partial Class Form1
         Me.GroupBox1.Controls.Add(Me.ListingCheck)
         Me.GroupBox1.Controls.Add(Me.ListingButton)
         Me.GroupBox1.Controls.Add(Me.ListingBox)
-        Me.GroupBox1.Location = New System.Drawing.Point(12, 75)
+        Me.GroupBox1.Location = New System.Drawing.Point(10, 65)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(228, 252)
+        Me.GroupBox1.Size = New System.Drawing.Size(195, 218)
         Me.GroupBox1.TabIndex = 2
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "Output Files"
@@ -110,17 +109,17 @@ Partial Class Form1
         'LogisimBox
         '
         Me.LogisimBox.Enabled = False
-        Me.LogisimBox.Location = New System.Drawing.Point(3, 41)
+        Me.LogisimBox.Location = New System.Drawing.Point(6, 40)
         Me.LogisimBox.Name = "LogisimBox"
-        Me.LogisimBox.Size = New System.Drawing.Size(188, 23)
+        Me.LogisimBox.Size = New System.Drawing.Size(157, 20)
         Me.LogisimBox.TabIndex = 3
         '
         'LogisimCheck
         '
         Me.LogisimCheck.AutoSize = True
-        Me.LogisimCheck.Location = New System.Drawing.Point(9, 22)
+        Me.LogisimCheck.Location = New System.Drawing.Point(8, 19)
         Me.LogisimCheck.Name = "LogisimCheck"
-        Me.LogisimCheck.Size = New System.Drawing.Size(142, 19)
+        Me.LogisimCheck.Size = New System.Drawing.Size(129, 17)
         Me.LogisimCheck.TabIndex = 0
         Me.LogisimCheck.Text = "Enable Logisim Image"
         Me.LogisimCheck.UseVisualStyleBackColor = True
@@ -128,9 +127,9 @@ Partial Class Form1
         'LogisimButton
         '
         Me.LogisimButton.Enabled = False
-        Me.LogisimButton.Location = New System.Drawing.Point(197, 41)
+        Me.LogisimButton.Location = New System.Drawing.Point(169, 40)
         Me.LogisimButton.Name = "LogisimButton"
-        Me.LogisimButton.Size = New System.Drawing.Size(25, 23)
+        Me.LogisimButton.Size = New System.Drawing.Size(21, 20)
         Me.LogisimButton.TabIndex = 2
         Me.LogisimButton.Text = "..."
         Me.LogisimButton.UseVisualStyleBackColor = True
@@ -138,9 +137,9 @@ Partial Class Form1
         'RawCheck
         '
         Me.RawCheck.AutoSize = True
-        Me.RawCheck.Location = New System.Drawing.Point(7, 183)
+        Me.RawCheck.Location = New System.Drawing.Point(6, 162)
         Me.RawCheck.Name = "RawCheck"
-        Me.RawCheck.Size = New System.Drawing.Size(110, 19)
+        Me.RawCheck.Size = New System.Drawing.Size(106, 17)
         Me.RawCheck.TabIndex = 10
         Me.RawCheck.Text = "Enable Raw Hex"
         Me.RawCheck.UseVisualStyleBackColor = True
@@ -148,9 +147,9 @@ Partial Class Form1
         'SymbolCheck
         '
         Me.SymbolCheck.AutoSize = True
-        Me.SymbolCheck.Location = New System.Drawing.Point(7, 130)
+        Me.SymbolCheck.Location = New System.Drawing.Point(6, 115)
         Me.SymbolCheck.Name = "SymbolCheck"
-        Me.SymbolCheck.Size = New System.Drawing.Size(134, 19)
+        Me.SymbolCheck.Size = New System.Drawing.Size(126, 17)
         Me.SymbolCheck.TabIndex = 5
         Me.SymbolCheck.Text = "Enable Symbol Table"
         Me.SymbolCheck.UseVisualStyleBackColor = True
@@ -158,9 +157,9 @@ Partial Class Form1
         'RawButton
         '
         Me.RawButton.Enabled = False
-        Me.RawButton.Location = New System.Drawing.Point(197, 208)
+        Me.RawButton.Location = New System.Drawing.Point(169, 180)
         Me.RawButton.Name = "RawButton"
-        Me.RawButton.Size = New System.Drawing.Size(25, 23)
+        Me.RawButton.Size = New System.Drawing.Size(21, 20)
         Me.RawButton.TabIndex = 6
         Me.RawButton.Text = "..."
         Me.RawButton.UseVisualStyleBackColor = True
@@ -168,9 +167,9 @@ Partial Class Form1
         'SymbolButton
         '
         Me.SymbolButton.Enabled = False
-        Me.SymbolButton.Location = New System.Drawing.Point(197, 155)
+        Me.SymbolButton.Location = New System.Drawing.Point(169, 136)
         Me.SymbolButton.Name = "SymbolButton"
-        Me.SymbolButton.Size = New System.Drawing.Size(25, 23)
+        Me.SymbolButton.Size = New System.Drawing.Size(21, 20)
         Me.SymbolButton.TabIndex = 7
         Me.SymbolButton.Text = "..."
         Me.SymbolButton.UseVisualStyleBackColor = True
@@ -178,25 +177,25 @@ Partial Class Form1
         'RawBox
         '
         Me.RawBox.Enabled = False
-        Me.RawBox.Location = New System.Drawing.Point(7, 208)
+        Me.RawBox.Location = New System.Drawing.Point(6, 180)
         Me.RawBox.Name = "RawBox"
-        Me.RawBox.Size = New System.Drawing.Size(184, 23)
+        Me.RawBox.Size = New System.Drawing.Size(157, 20)
         Me.RawBox.TabIndex = 8
         '
         'SymbolBox
         '
         Me.SymbolBox.Enabled = False
-        Me.SymbolBox.Location = New System.Drawing.Point(7, 155)
+        Me.SymbolBox.Location = New System.Drawing.Point(6, 136)
         Me.SymbolBox.Name = "SymbolBox"
-        Me.SymbolBox.Size = New System.Drawing.Size(184, 23)
+        Me.SymbolBox.Size = New System.Drawing.Size(157, 20)
         Me.SymbolBox.TabIndex = 9
         '
         'ListingCheck
         '
         Me.ListingCheck.AutoSize = True
-        Me.ListingCheck.Location = New System.Drawing.Point(7, 76)
+        Me.ListingCheck.Location = New System.Drawing.Point(8, 66)
         Me.ListingCheck.Name = "ListingCheck"
-        Me.ListingCheck.Size = New System.Drawing.Size(99, 19)
+        Me.ListingCheck.Size = New System.Drawing.Size(92, 17)
         Me.ListingCheck.TabIndex = 4
         Me.ListingCheck.Text = "Enable Listing"
         Me.ListingCheck.UseVisualStyleBackColor = True
@@ -204,9 +203,9 @@ Partial Class Form1
         'ListingButton
         '
         Me.ListingButton.Enabled = False
-        Me.ListingButton.Location = New System.Drawing.Point(197, 101)
+        Me.ListingButton.Location = New System.Drawing.Point(169, 89)
         Me.ListingButton.Name = "ListingButton"
-        Me.ListingButton.Size = New System.Drawing.Size(25, 23)
+        Me.ListingButton.Size = New System.Drawing.Size(21, 20)
         Me.ListingButton.TabIndex = 2
         Me.ListingButton.Text = "..."
         Me.ListingButton.UseVisualStyleBackColor = True
@@ -214,36 +213,37 @@ Partial Class Form1
         'ListingBox
         '
         Me.ListingBox.Enabled = False
-        Me.ListingBox.Location = New System.Drawing.Point(6, 101)
+        Me.ListingBox.Location = New System.Drawing.Point(6, 89)
         Me.ListingBox.Name = "ListingBox"
-        Me.ListingBox.Size = New System.Drawing.Size(185, 23)
+        Me.ListingBox.Size = New System.Drawing.Size(157, 20)
         Me.ListingBox.TabIndex = 3
         '
         'AssemblerOutputBox
         '
         Me.AssemblerOutputBox.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.AssemblerOutputBox.Location = New System.Drawing.Point(3, 19)
+        Me.AssemblerOutputBox.Location = New System.Drawing.Point(3, 16)
         Me.AssemblerOutputBox.Name = "AssemblerOutputBox"
         Me.AssemblerOutputBox.ReadOnly = True
-        Me.AssemblerOutputBox.Size = New System.Drawing.Size(438, 331)
+        Me.AssemblerOutputBox.Size = New System.Drawing.Size(375, 287)
         Me.AssemblerOutputBox.TabIndex = 4
         Me.AssemblerOutputBox.Text = ""
         '
         'GroupBox3
         '
         Me.GroupBox3.Controls.Add(Me.AssemblerOutputBox)
-        Me.GroupBox3.Location = New System.Drawing.Point(246, 5)
+        Me.GroupBox3.Location = New System.Drawing.Point(211, 4)
         Me.GroupBox3.Name = "GroupBox3"
-        Me.GroupBox3.Size = New System.Drawing.Size(444, 353)
+        Me.GroupBox3.Size = New System.Drawing.Size(381, 306)
         Me.GroupBox3.TabIndex = 5
         Me.GroupBox3.TabStop = False
         Me.GroupBox3.Text = "Assembler Output"
         '
         'StatusStrip1
         '
-        Me.StatusStrip1.Location = New System.Drawing.Point(0, 365)
+        Me.StatusStrip1.Location = New System.Drawing.Point(0, 313)
         Me.StatusStrip1.Name = "StatusStrip1"
-        Me.StatusStrip1.Size = New System.Drawing.Size(702, 22)
+        Me.StatusStrip1.Padding = New System.Windows.Forms.Padding(1, 0, 12, 0)
+        Me.StatusStrip1.Size = New System.Drawing.Size(602, 22)
         Me.StatusStrip1.TabIndex = 6
         Me.StatusStrip1.Text = "StatusStrip1"
         '
@@ -251,18 +251,18 @@ Partial Class Form1
         '
         Me.HelpLabel.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.HelpLabel.AutoSize = True
-        Me.HelpLabel.Location = New System.Drawing.Point(8, 371)
+        Me.HelpLabel.Location = New System.Drawing.Point(7, 322)
         Me.HelpLabel.Name = "HelpLabel"
-        Me.HelpLabel.Size = New System.Drawing.Size(0, 15)
+        Me.HelpLabel.Size = New System.Drawing.Size(0, 13)
         Me.HelpLabel.TabIndex = 7
         Me.HelpLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
         'Form1
         '
         Me.AllowDrop = True
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0!, 15.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(702, 387)
+        Me.ClientSize = New System.Drawing.Size(602, 335)
         Me.Controls.Add(Me.AssembleButton)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.GroupBox2)
