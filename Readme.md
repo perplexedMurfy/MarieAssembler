@@ -26,7 +26,7 @@ An assembler for the fictional Marie computer
 | addi | Identifier or Hex literal | `0xBxxx` Low 3 bytes are parameter |
 | jumpi | Identifier or Hex literal | `0xCxxx` Low 3 bytes are parameter |
 | loadi | Identifier or Hex literal | `0xDxxx` Low 3 bytes are parameter |
-| storei | Identifier or Hex literal | `0xxxx` Low 3 bytes are parameter |
+| storei | Identifier or Hex literal | `0xxxxx` Low 3 bytes are parameter |
 | data | Hex literal or Dec literal | Inserts 4 byte Hex/Dec literal into your program |
 | .SetAddr | Hex literal | Assembler Directive: Output following program bytes starting from [Param] |
 | .Ident | Identifier Name | Assembler Directive: Declare the provided name as a alias for the preceding operation's memory address. The Identifier name may be used anywhere where a Identifier can be a parameter for. |
