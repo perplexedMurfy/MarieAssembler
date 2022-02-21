@@ -37,6 +37,8 @@ An assembler for the fictional Marie computer
  * When given "lesser" as a parameter, opcode is `0x8000`
  * When given a Hex literal as a parameter, the low 3 bytes of the opcode are the parameter
 
+For a demo of the syntax, consult `bin/testprograms/Tutorial.MarieAsm`
+
 ## Building
 ### Windows
 #### Commandline
@@ -60,7 +62,7 @@ An assembler for the fictional Marie computer
 #### Commandline
  * Run `build_linux.sh` from your commandline
    * This requires that gcc is installed
-	 * The output will be in `bin/`
+   * The output will be in `bin/`
 
 ## Command Line Usage
 ```

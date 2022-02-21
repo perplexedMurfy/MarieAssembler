@@ -1,3 +1,5 @@
+/ Seeing is Learning! To see how this file gets assembled assemble this file with the following commandline options:
+/ MarieAssembler.exe Tutorial.MarieAsm --listing --symboltable
 / Comments start with a '/' charcter and last to the end of the line
 data 0x1000 / raw values can be inserted into a program with the `data` keyword
 data 0d1000 / use '0x' to denote hexadecimal. use '0d' to denote decimal
