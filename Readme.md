@@ -59,7 +59,7 @@ An assembler for the fictional Marie computer
 ### Linux
 #### Commandline
  * Run `build_linux.sh` from your commandline
-   * This require gcc installed
+   * This requires that gcc is installed
 	 * The output will be in `bin/`
 
 ## Command Line Usage
