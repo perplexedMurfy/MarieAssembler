@@ -20,7 +20,7 @@ An assembler for the fictional Marie computer
 | input | No param | `0x5000` |
 | output | No param | `0x6000` |
 | halt | No param | `0x7000` |
-| skipcond | "greater", "lesser", "equal", or Hex literal | `0x8xxx`[[1]](#[1]) |
+| skipcond | "greater", "lesser", "equal", or Hex literal | `0x8xxx`[[1]](#1) |
 | jump | Identifier or Hex literal | `0x9xxx` Low 3 bytes are parameter |
 | clear | Identifier or Hex literal | `0xAxxx` Low 3 bytes are parameter |
 | addi | Identifier or Hex literal | `0xBxxx` Low 3 bytes are parameter |
@@ -35,6 +35,7 @@ An assembler for the fictional Marie computer
  * When given "greater" as a parameter, opcode is `0x8C00`
  * When given "equal" as a parameter, opcode is `0x8400`
  * When given "lesser" as a parameter, opcode is `0x8000`
+ * When given a Hex literal as a parameter, the low 3 bytes of the opcode are the parameter
 
 ## Building
 ### Windows
